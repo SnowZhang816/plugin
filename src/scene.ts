@@ -28,22 +28,6 @@ function findByUUID(node: any, uuid: any): any {
     }
 }
 
-function findByName(node: any, name: any): any {
-    let findNode = node.getChildByName(name)
-    if (findNode) {
-        return findNode
-    } else {
-        let children = node.children ?? []
-        for (let index = 0; index < children.length; index++) {
-            const child = children[index];
-            let tNode = findByUUID(child, name)
-            if (tNode) {
-                return tNode
-            }
-        }
-    }
-}
-
 function findUITransform(node: any): any {
     let c = node.getComponent(UITransform)
     if (c) {
@@ -70,19 +54,39 @@ function getDbPath(filename: string): string {
     return str.substring(0, lastIndex);
 }
 
-type RetryFunction = () => any
+function refreshAssetDb(){
+    return new Promise((resolve)=>{
+        const options = {
+            hostname: 'localhost',
+            port: 7456,
+            path: '/asset-db/refresh',
+            method: 'GET',
+        };
 
-async function retry(fun: RetryFunction, times: number): Promise<any> {
-    while (times > 0) {
-        console.warn("retry=======times", times)
-        times--
-        let result = await fun()
-        console.warn("retry=======result", result)
-        if (result) {
-            return
-        }
-    }
-    return null
+        const req = http.request(options, (res) => {
+            let data = '';
+            res.on('data', (chunk) => {
+                data += chunk;
+            });
+
+            res.on('end', () => {
+                console.warn("http.request end", data); // 打印接收到的响应数据
+                if (data == "success") {
+                    resolve(true)
+                }else{
+                    resolve(false)
+                }
+                
+            });
+        });
+
+        req.on('error', (error) => {
+            console.error(error);
+            resolve(false)
+        });
+
+        req.end();
+    })
 }
 
 /**
@@ -95,60 +99,57 @@ export const methods: { [key: string]: (...any: any) => any } = {
     },
 
     asyncParentSize() {
-        // let nodes = Editor.Selection.getSelected("node")
-        // const { director } = require('cc');
-        // for (let index = 0; index < nodes.length; index++) {
-        //     const uuid = nodes[index];
-        //     console.log("rotateCamera uuid", index, uuid)
-        //     let node = findByUUID(director.getScene(), uuid)
-        //     console.log("rotateCamera node", node)
-        //     if (node) {
-        //         let p = findUITransform(node)
-        //         if (!p) {
-        //             console.warn("没有找到UITransform")
-        //             return
-        //         }
-        //         let c = node.getComponent(UITransform)
-        //         if (!c) {
-        //             c = node.addComponent(UITransform)
-        //         }
+        let nodes = Editor.Selection.getSelected("node")
+        const { director } = require('cc');
+        for (let index = 0; index < nodes.length; index++) {
+            const uuid = nodes[index];
+            console.log("rotateCamera uuid", index, uuid)
+            let node = findByUUID(director.getScene(), uuid)
+            console.log("rotateCamera node", node)
+            if (node) {
+                let p = findUITransform(node)
+                if (!p) {
+                    console.warn("没有找到UITransform")
+                    return
+                }
+                let c = node.getComponent(UITransform)
+                if (!c) {
+                    c = node.addComponent(UITransform)
+                }
 
-        //         c.setContentSize(p.width, p.height)
+                c.setContentSize(p.width, p.height)
 
-        //         console.log("rotateCamera size", p.width, p.height)
+                console.log("rotateCamera size", p.width, p.height)
 
-        //         let com = node.getComponent(Widget)
-        //         if (!com) {
-        //             com = node.addComponent(Widget)
-        //         }
-        //         console.log("rotateCamera com", com)
-        //         com.isAlignTop = true
-        //         com.isAlignBottom = true
-        //         com.isAlignRight = true
-        //         com.isAlignLeft = true
-        //         com.editorLeft = 0
-        //         com.editorRight = 0
-        //         com.editorBottom = 0
-        //         com.editorTop = 0
-        //     }
-        // }
+                let com = node.getComponent(Widget)
+                if (!com) {
+                    com = node.addComponent(Widget)
+                }
+                console.log("rotateCamera com", com)
+                com.isAlignTop = true
+                com.isAlignBottom = true
+                com.isAlignRight = true
+                com.isAlignLeft = true
+                com.editorLeft = 0
+                com.editorRight = 0
+                com.editorBottom = 0
+                com.editorTop = 0
+            }
+        }
 
-        // return false;
-
-        let class1 = js.getClassByName("StageWaitLand")
-        console.warn("setTimeout getClassByName", class1)
+        return false;
     },
 
-    createUICompoment() {
+    createUIComponent() {
         const { director } = require('cc');
         let nodes = Editor.Selection.getSelected("node")
-        console.warn("createUICompoment nodes", nodes)
+        console.warn("createUIComponent nodes", nodes)
         let parent = director.getScene()
         if (nodes.length == 1) {
             let uuid = nodes[0]
             parent = findByUUID(parent, uuid)
         }
-        console.warn("createUICompoment parent", parent)
+        console.warn("createUIComponent parent", parent)
         if (!parent) {
             return
         }
@@ -165,30 +166,27 @@ export const methods: { [key: string]: (...any: any) => any } = {
         let uuid = args[1]
         let prefabUuid = args[2]
         if (!name || !uuid || !prefabUuid) {
-            console.warn("createComponent args is invaild", name, uuid, prefabUuid)
-            return
-        }
-
-        const { director } = require('cc');
-        let parent = director.getScene()
-        let node = findByUUID(parent, uuid)
-        if (!node) {
-            console.warn("createComponent not find node")
+            console.warn("createComponent args is invalid", name, uuid, prefabUuid)
             return
         }
 
         let assetInfo = await Editor.Message.request("asset-db", "query-asset-info", prefabUuid)
         if (!assetInfo) {
-            console.warn("createComponent query-asset-info error", node)
+            console.warn("createComponent query-asset-info error", assetInfo)
             return
         }
 
         let newFileName = name + ".ts"
         let newFile = getDbPath(assetInfo.url) + "/" + newFileName
-        let template = path.join(Editor.Project.path, ".creator", "asset-template", "typescript", "XComponent")
+        // let template = path.join(Editor.Project.path, ".creator", "asset-template", "typescript", "XComponent")
+        let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts")
+        if (!template) {
+            console.warn("createComponent query-path error")
+            return
+        }
         try {
             let str = fs.readFileSync(template, 'utf8')
-            str = str.replace(/<%CamelCaseClassName%>/g, name)
+            str = str.replace(/<%UnderscoreCaseClassName%>/g, name)
             let newAssetInfo = await Editor.Message.request("asset-db", "create-asset", newFile, str)
             if (!newAssetInfo) {
                 console.warn("createComponent create-asset error")
@@ -197,53 +195,32 @@ export const methods: { [key: string]: (...any: any) => any } = {
 
             await Editor.Message.request("asset-db", "refresh-asset", "db://assets")
 
-            const options = {
-                hostname: 'localhost',
-                port: 7456,
-                path: '/asset-db/refresh',
-                method: 'GET',
-            };
+            //编译代码
+            await refreshAssetDb()
 
-            const req = http.request(options, (res) => {
-                let data = '';
-                res.on('data', (chunk) => {
-                    data += chunk;
-                });
-
-                res.on('end', () => {
-                    console.warn("http.request end", data); // 打印接收到的响应数据
-                    if (data == "success") {
-                        let tryAddComponent = (times: number) => {
-                            times = times - 1
-                            console.warn("http.request end", times); // 打印接收到的响应数据
-                            setTimeout(async () => {
-                                let class1 = js.getClassByName(name);
-                                if (class1) {
-                                    let options : CreateComponentOptions = {
-                                        uuid : uuid,
-                                        component : name
-                                    }
-                                    Editor.Message.request("scene", "create-component", options)
-                                }
-                                else {
-                                    if (times > 0) {
-                                        tryAddComponent(times)
-                                    } else {
-                                        console.warn("组件没有添加到节点上")
-                                    }
-                                }
-                            }, 100);
+            let tryAddComponent = (times: number) => {
+                times = times - 1
+                console.warn("http.request end", times); // 打印接收到的响应数据
+                setTimeout(async () => {
+                    let class1 = js.getClassByName(name);
+                    if (class1) {
+                        let options : CreateComponentOptions = {
+                            uuid : uuid,
+                            component : name
                         }
-                        tryAddComponent(10)
+                        Editor.Message.request("scene", "create-component", options)
                     }
-                });
-            });
+                    else {
+                        if (times > 0) {
+                            tryAddComponent(times)
+                        } else {
+                            console.warn("组件没有添加到节点上")
+                        }
+                    }
+                }, 100);
+            }
 
-            req.on('error', (error) => {
-                console.error(error);
-            });
-
-            req.end();
+            tryAddComponent(10)
         } catch (error) {
             console.warn(`createComponent open ${template} fail`, error)
         }

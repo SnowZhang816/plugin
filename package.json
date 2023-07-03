@@ -27,16 +27,6 @@
                 "methods": [
                     "log"
                 ]
-            },
-            "selection:select" : {
-                "methods": [
-                    "mainReady"
-                ]
-            },
-            "assets:add" : {
-                "methods": [
-                    "assetsAdd1"
-                ]
             }
         },
         "scene": {
