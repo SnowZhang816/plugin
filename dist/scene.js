@@ -281,13 +281,22 @@ exports.methods = {
                 console.warn("com", com);
                 let props = Object.getOwnPropertyNames(com);
                 if (props.indexOf(propertyName) != -1) {
-                    console.warn("com", true);
+                    com[propertyName] = exportNode;
+                    // Object.setPrototypeOf(com, propertyName)
                 }
             }
             let prefabPath = await Editor.Message.request("asset-db", "query-path", prefabUuid);
             let prefabStr = fs_1.default.readFileSync(prefabPath, 'utf8');
             let prefabInfo = JSON.parse(prefabStr);
             console.log("prefabInfo", prefabInfo);
+            for (let i = 0; i < prefabInfo.length; i++) {
+                const info = prefabInfo[i];
+                if (info.__type__ == scriptID) {
+                    info[propertyName] = {
+                        __id__: 2
+                    };
+                }
+            }
         }
         catch (error) {
             console.warn(`createComponent open ${path} fail`, error);

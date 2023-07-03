@@ -9,6 +9,8 @@ import fs from 'fs'
 import { CreateComponentOptions } from "../@types/packages/scene/@types/public";
 import http from 'http';
 import { js } from "cc";
+import { Component } from "cc";
+import { __private } from "cc";
 const { director } = require('cc');
 
 
@@ -296,7 +298,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
 
             //编译代码
             await refreshAssetDb()
-
+            
             let node = director.getScene() as Node
             let coms = node.getComponentsInChildren(scriptName)
             console.warn("getComponentsInChildren", coms)
@@ -305,11 +307,11 @@ export const methods: { [key: string]: (...any: any) => any } = {
             console.warn("exportNode", exportNode)
 
             for (let index = 0; index < coms.length; index++) {
-                const com = coms[index];
+                const com = coms[index] as any;
                 console.warn("com", com)
                 let props = Object.getOwnPropertyNames(com)
                 if (props.indexOf(propertyName) != -1) {
-                    console.warn("com", true)
+                    com[propertyName] = exportNode
                 }
             }
 
