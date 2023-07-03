@@ -1,5 +1,5 @@
 "use strict"; module.exports = {
-  description: "A blank extension",
+  description: "提供一些脚本帮助",
   menu: {
     createAsset: '按我的方式创建某种资源',
 
@@ -14,8 +14,8 @@
 
     fullParent: "同步父节点大小",
 
-    customUiCompoment: "创建自定义UI组件",
-    createCompoment: "创建同名组件"
+    customUiComponent: "创建自定义UI组件",
+    createComponent: "创建同名组件"
   },
 
   ui: {

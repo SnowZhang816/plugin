@@ -14,9 +14,9 @@
 
     fullParent: "sync parent size",
 
-    customUiCompoment: "custom UI",
+    customUiComponent: "custom UI",
 
-    createCompoment: "Create component"
+    createComponent: "Create component"
   },
   ui: {
     sprite: "sprite(widget)"

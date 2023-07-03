@@ -4,7 +4,7 @@ export function onCreateMenu(assetInfo: AssetInfo) {
   console.warn("assets-menu onCreateMenu")
   return [
     {
-      label: 'i18n:simple-1687856477446.menu.createAsset',
+      label: 'i18n:script-help.menu.createAsset',
       click() {
         if (!assetInfo) {
           console.log('get create command from header menu');
@@ -21,10 +21,10 @@ export function onAssetMenu(assetInfo: AssetInfo) {
   console.warn("assets-menu onAssetMenu", assetInfo)
   return [
     {
-      label: 'i18n:simple-1687856477446.menu.assetCommandParent',
+      label: 'i18n:script-help.menu.assetCommandParent',
       submenu: [
         {
-          label: 'i18n:simple-1687856477446.menu.assetCommand1',
+          label: 'i18n:script-help.menu.assetCommand1',
           enabled: assetInfo.isDirectory,
           click() {
             console.log('get it');
@@ -32,7 +32,7 @@ export function onAssetMenu(assetInfo: AssetInfo) {
           },
         },
         {
-          label: 'i18n:simple-1687856477446.menu.assetCommand2',
+          label: 'i18n:script-help.menu.assetCommand2',
           enabled: !assetInfo.isDirectory,
           click() {
             console.log('yes, you clicked');

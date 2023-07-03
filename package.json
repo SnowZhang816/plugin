@@ -1,8 +1,8 @@
 {
     "package_version": 2,
     "version": "1.0.0",
-    "name": "simple-1687856477446",
-    "description": "i18n:simple-1687856477446.description",
+    "name": "script-help",
+    "description": "i18n:script-help.description",
     "main": "./dist/main.js",
     "devDependencies": {
         "@types/node": "^16.0.1",
@@ -18,7 +18,7 @@
         "menu": [
             {
                 "path": "测试",
-                "label": "i18n:simple-1687856477446.menu.fullParent",
+                "label": "i18n:script-help.menu.fullParent",
                 "message": "log"
             }
         ],

@@ -2,10 +2,10 @@ import { AssetInfo } from "../@types/packages/asset-db/@types/public";
 import { ExecuteSceneScriptMethodOptions } from "../@types/packages/scene/@types/public";
 
 let createComponent = {
-    label: 'i18n:simple-1687856477446.menu.createCompoment',
+    label: 'i18n:script-help.menu.createComponent',
     click() {
         const options: ExecuteSceneScriptMethodOptions = {
-            name: "simple-1687856477446",
+            name: "script-help",
             method: 'createComponent',
             args: []
         };
@@ -18,10 +18,10 @@ export function onCreateMenu(t : any) {
     console.warn("assets-hierarchy onCreateMenu", t)
     return [
         {
-            label: 'i18n:simple-1687856477446.menu.fullParent',
+            label: 'i18n:script-help.menu.fullParent',
             click() {
                 const options: ExecuteSceneScriptMethodOptions = {
-                    name: "simple-1687856477446",
+                    name: "script-help",
                     method: 'asyncParentSize',
                     args: []
                 };
@@ -30,13 +30,13 @@ export function onCreateMenu(t : any) {
             },
         },
         {
-            label: 'i18n:simple-1687856477446.menu.customUiCompoment',
+            label: 'i18n:script-help.menu.customUiComponent',
             submenu: [
                 {
-                  label: 'i18n:simple-1687856477446.ui.sprite',
+                  label: 'i18n:script-help.ui.sprite',
                   click() {
                     const options: ExecuteSceneScriptMethodOptions = {
-                        name: "simple-1687856477446",
+                        name: "script-help",
                         method: 'createUICompoment',
                         args: []
                     };
@@ -64,10 +64,10 @@ export function onNodeMenu(t : any) {
     
     return [
         {
-            label: 'i18n:simple-1687856477446.menu.fullParent',
+            label: 'i18n:script-help.menu.fullParent',
             click() {
                 const options: ExecuteSceneScriptMethodOptions = {
-                    name: "simple-1687856477446",
+                    name: "script-help",
                     method: 'asyncParentSize',
                     args: []
                 };
@@ -76,11 +76,11 @@ export function onNodeMenu(t : any) {
             },
         },
         {
-            label: 'i18n:simple-1687856477446.menu.createCompoment',
+            label: 'i18n:script-help.menu.createComponent',
             click() {
                 console.warn("assets-hierarchy onRootMenu click")
                 const options: ExecuteSceneScriptMethodOptions = {
-                    name: "simple-1687856477446",
+                    name: "script-help",
                     method: 'createComponent',
                     args: [name, uuid, resPath]
                 };
@@ -95,10 +95,10 @@ export function onPanelMenu(t : any) {
     console.warn("assets-hierarchy onPanelMenu", t)
     return [
         {
-            label: 'i18n:simple-1687856477446.menu.fullParent',
+            label: 'i18n:script-help.menu.fullParent',
             async click() {
                 const options: ExecuteSceneScriptMethodOptions = {
-                    name: "simple-1687856477446",
+                    name: "script-help",
                     method: 'asyncParentSize',
                     args: []
                 };
@@ -108,13 +108,13 @@ export function onPanelMenu(t : any) {
         },
 
         {
-            label: 'i18n:simple-1687856477446.menu.customUiCompoment',
+            label: 'i18n:script-help.menu.customUiComponent',
             submenu: [
                 {
-                  label: 'i18n:simple-1687856477446.ui.sprite',
+                  label: 'i18n:script-help.ui.sprite',
                   click() {
                     const options: ExecuteSceneScriptMethodOptions = {
-                        name: "simple-1687856477446",
+                        name: "script-help",
                         method: 'createUICompoment',
                         args: []
                     };
@@ -149,11 +149,11 @@ export function onRootMenu(t : any){
         console.warn("assets-hierarchy onRootMenu", t, s)
         return [
             {
-                label: 'i18n:simple-1687856477446.menu.createCompoment',
+                label: 'i18n:script-help.menu.createComponent',
                 click() {
                     console.warn("assets-hierarchy onRootMenu click")
                     const options: ExecuteSceneScriptMethodOptions = {
-                        name: "simple-1687856477446",
+                        name: "script-help",
                         method: 'createComponent',
                         args: [name, uuid, resPath]
                     };
