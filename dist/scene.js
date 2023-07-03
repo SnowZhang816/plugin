@@ -8,6 +8,7 @@ const cc_1 = require("cc");
 const cc_2 = require("cc");
 const cc_3 = require("cc");
 const cc_4 = require("cc");
+const path_1 = __importDefault(require("path"));
 const fs_1 = __importDefault(require("fs"));
 const http_1 = __importDefault(require("http"));
 const cc_5 = require("cc");
@@ -162,11 +163,12 @@ exports.methods = {
         let newFileName = name + ".ts";
         let newFile = getDbPath(assetInfo.url) + "/" + newFileName;
         // let template = path.join(Editor.Project.path, ".creator", "asset-template", "typescript", "XComponent")
-        let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts");
-        if (!template) {
-            console.warn("createComponent query-path error");
-            return;
-        }
+        // let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts")
+        // if (!template) {
+        //     console.warn("createComponent query-path error")
+        //     return
+        // }
+        let template = path_1.default.join(Editor.Project.path, "extensions", "script-help", "template", "ts");
         try {
             let str = fs_1.default.readFileSync(template, 'utf8');
             str = str.replace(/<%UnderscoreCaseClassName%>/g, name);

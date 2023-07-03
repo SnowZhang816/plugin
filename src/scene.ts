@@ -179,11 +179,12 @@ export const methods: { [key: string]: (...any: any) => any } = {
         let newFileName = name + ".ts"
         let newFile = getDbPath(assetInfo.url) + "/" + newFileName
         // let template = path.join(Editor.Project.path, ".creator", "asset-template", "typescript", "XComponent")
-        let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts")
-        if (!template) {
-            console.warn("createComponent query-path error")
-            return
-        }
+        // let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts")
+        // if (!template) {
+        //     console.warn("createComponent query-path error")
+        //     return
+        // }
+        let template = path.join(Editor.Project.path, "extensions", "script-help", "template", "ts")
         try {
             let str = fs.readFileSync(template, 'utf8')
             str = str.replace(/<%UnderscoreCaseClassName%>/g, name)
