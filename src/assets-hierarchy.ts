@@ -20,7 +20,7 @@ export function onCreateMenu(t : any) {
     ];
 };
 
-function getSubMenu(propertyName : string, propertyType : string, uuid : string, isNode : boolean, scriptLabel : string, cid : string, assetUuid : string){
+function getSubMenu(propertyName : string, propertyType : string, uuid : string, isNode : boolean, scriptLabel : string, cid : string, assetUuid : string, resPath : string){
     return {
         label : scriptLabel,
         click(){
@@ -28,7 +28,7 @@ function getSubMenu(propertyName : string, propertyType : string, uuid : string,
             const options: ExecuteSceneScriptMethodOptions = {
                 name: "script-help",
                 method: 'exportComToScript',
-                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode]
+                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode, resPath]
             };
     
             Editor.Message.request('scene', 'execute-scene-script', options)
@@ -89,7 +89,7 @@ export async function onNodeMenu(t : any) {
         let subSceneComMenus = []
         for (let index = 0; index < valids.length; index++) {
             const sceneCom = valids[index];
-            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid))
+            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath))
         }
     
         let subMenus = []
@@ -105,7 +105,7 @@ export async function onNodeMenu(t : any) {
             subSceneComMenus = []
             for (let index = 0; index < valids.length; index++) {
                 const sceneCom = valids[index];
-                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.',''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid))
+                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.',''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath))
             }
             
             subMenus.push({

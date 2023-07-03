@@ -19,7 +19,7 @@ function onCreateMenu(t) {
 }
 exports.onCreateMenu = onCreateMenu;
 ;
-function getSubMenu(propertyName, propertyType, uuid, isNode, scriptLabel, cid, assetUuid) {
+function getSubMenu(propertyName, propertyType, uuid, isNode, scriptLabel, cid, assetUuid, resPath) {
     return {
         label: scriptLabel,
         click() {
@@ -27,7 +27,7 @@ function getSubMenu(propertyName, propertyType, uuid, isNode, scriptLabel, cid, 
             const options = {
                 name: "script-help",
                 method: 'exportComToScript',
-                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode]
+                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode, resPath]
             };
             Editor.Message.request('scene', 'execute-scene-script', options);
         }
@@ -81,7 +81,7 @@ async function onNodeMenu(t) {
         let subSceneComMenus = [];
         for (let index = 0; index < valids.length; index++) {
             const sceneCom = valids[index];
-            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid));
+            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath));
         }
         let subMenus = [];
         subMenus.push({
@@ -95,7 +95,7 @@ async function onNodeMenu(t) {
             subSceneComMenus = [];
             for (let index = 0; index < valids.length; index++) {
                 const sceneCom = valids[index];
-                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.', ''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid));
+                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.', ''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath));
             }
             subMenus.push({
                 label: nodeCom.type + " 到",

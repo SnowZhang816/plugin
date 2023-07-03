@@ -266,6 +266,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
         let exportType = args[4]
         let exportUuid = args[5]
         let isNode = args[6]
+        let prefabUuid = args[7]
 
         console.log("exportComToScript", scriptName, scriptID, scriptAssetUuid, propertyName, exportType, exportUuid, isNode)
 
@@ -283,7 +284,6 @@ export const methods: { [key: string]: (...any: any) => any } = {
             str = str.replace("extends Component {", `extends Component {\n\t@property(${exportType})\n\t${propertyName} : ${exportType}\n`)
             let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/
             const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
-            console.warn("modifiedRegex", modifiedRegex)
             if (!modifiedRegex.test(str)) {
                 str = `import { ${exportType} } from 'cc'\n` + str
             }
@@ -298,7 +298,36 @@ export const methods: { [key: string]: (...any: any) => any } = {
             await refreshAssetDb()
 
             let node = director.getScene() as Node
-            node.getComponentsInChildren(scriptName)
+            let coms = node.getComponentsInChildren(scriptName)
+            console.warn("getComponentsInChildren", coms)
+
+            let exportNode = findByUUID(node, exportUuid)
+            console.warn("exportNode", exportNode)
+
+            for (let index = 0; index < coms.length; index++) {
+                const com = coms[index];
+                console.warn("com", com)
+                let props = Object.getOwnPropertyNames(com)
+                if (props.indexOf(propertyName) != -1) {
+                    console.warn("com", true)
+                }
+            }
+
+            let prefabPath = await Editor.Message.request("asset-db", "query-path", prefabUuid)
+
+            let prefabStr = fs.readFileSync(prefabPath, 'utf8')
+            let prefabInfo = JSON.parse(prefabStr)
+            console.log("prefabInfo", prefabInfo)
+
+            for (let i = 0; i < prefabInfo.length; i++) {
+                const info = prefabInfo[i];
+                if (info.__type__ == scriptID) {
+                    info[propertyName] = {
+                        __id__ : 2
+                    }
+                }
+            }
+            
         } catch (error) {
             console.warn(`createComponent open ${path} fail`, error)
         }

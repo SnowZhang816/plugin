@@ -247,6 +247,7 @@ exports.methods = {
         let exportType = args[4];
         let exportUuid = args[5];
         let isNode = args[6];
+        let prefabUuid = args[7];
         console.log("exportComToScript", scriptName, scriptID, scriptAssetUuid, propertyName, exportType, exportUuid, isNode);
         let cls = cc_5.js.getClassById(scriptID);
         let instance = new cls();
@@ -261,7 +262,6 @@ exports.methods = {
             str = str.replace("extends Component {", `extends Component {\n\t@property(${exportType})\n\t${propertyName} : ${exportType}\n`);
             let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/;
             const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
-            console.warn("modifiedRegex", modifiedRegex);
             if (!modifiedRegex.test(str)) {
                 str = `import { ${exportType} } from 'cc'\n` + str;
             }
@@ -272,7 +272,22 @@ exports.methods = {
             //编译代码
             await refreshAssetDb();
             let node = director.getScene();
-            node.getComponentsInChildren(scriptName);
+            let coms = node.getComponentsInChildren(scriptName);
+            console.warn("getComponentsInChildren", coms);
+            let exportNode = findByUUID(node, exportUuid);
+            console.warn("exportNode", exportNode);
+            for (let index = 0; index < coms.length; index++) {
+                const com = coms[index];
+                console.warn("com", com);
+                let props = Object.getOwnPropertyNames(com);
+                if (props.indexOf(propertyName) != -1) {
+                    console.warn("com", true);
+                }
+            }
+            let prefabPath = await Editor.Message.request("asset-db", "query-path", prefabUuid);
+            let prefabStr = fs_1.default.readFileSync(prefabPath, 'utf8');
+            let prefabInfo = JSON.parse(prefabStr);
+            console.log("prefabInfo", prefabInfo);
         }
         catch (error) {
             console.warn(`createComponent open ${path} fail`, error);
