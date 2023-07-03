@@ -1,3 +1,4 @@
+import { MenuItem } from "electron";
 import { AssetInfo } from "../@types/packages/asset-db/@types/public";
 import { ExecuteSceneScriptMethodOptions } from "../@types/packages/scene/@types/public";
 
@@ -19,9 +20,27 @@ export function onCreateMenu(t : any) {
     ];
 };
 
-export function onNodeMenu(t : any) {
+function getSubMenu(propertyName : string, propertyType : string, uuid : string, isNode : boolean, scriptLabel : string, cid : string, assetUuid : string){
+    return {
+        label : scriptLabel,
+        click(){
+            console.warn("click", uuid, isNode, scriptLabel, cid)
+            const options: ExecuteSceneScriptMethodOptions = {
+                name: "script-help",
+                method: 'exportComToScript',
+                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode]
+            };
+    
+            Editor.Message.request('scene', 'execute-scene-script', options)
+        }
+    }
+}
+
+export async function onNodeMenu(t : any) {
     console.warn("assets-hierarchy onNodeMenu", t)
     let menus = []
+
+    //同步父节点大小
     menus.push({
         label: 'i18n:script-help.menu.fullParent',
         click() {
@@ -35,11 +54,10 @@ export function onNodeMenu(t : any) {
         },
     })
 
-    
+    //生成同名组件
     let name = t.name
     let uuid = t.uuid
     let resPath = t.prefab.assetUuid
-
     if (resPath && resPath != '') {
         menus.push(        {
             label: 'i18n:script-help.menu.createComponent',
@@ -56,6 +74,52 @@ export function onNodeMenu(t : any) {
         })
     }
     
+    //导出节点到组件脚本中
+    let sceneComponents = await Editor.Message.request('scene', 'query-components')
+    let valids:any[] = []
+    for (let index = 0; index < sceneComponents.length; index++) {
+        const component = sceneComponents[index];
+        if (component.assetUuid && component.name != 'internal.DebugViewRuntimeControl') {
+            valids.push(component)
+        }
+    }
+    if (valids.length > 0) {
+        console.warn("valids sceneComponents", valids)
+
+        let subSceneComMenus = []
+        for (let index = 0; index < valids.length; index++) {
+            const sceneCom = valids[index];
+            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid))
+        }
+    
+        let subMenus = []
+        subMenus.push({
+            label: 'Node 到',
+            submenu : subSceneComMenus
+        })
+
+        let nodeComponents = t.components ?? []
+        for (let index = 0; index < nodeComponents.length; index++) {
+            const nodeCom = nodeComponents[index];
+            console.warn("nodeComponents element", nodeCom)
+            subSceneComMenus = []
+            for (let index = 0; index < valids.length; index++) {
+                const sceneCom = valids[index];
+                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.',''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid))
+            }
+            
+            subMenus.push({
+                label: nodeCom.type + " 到",
+                submenu : subSceneComMenus
+            })
+        }
+
+        menus.push({
+            label: '导出',
+            submenu : subMenus
+        })
+    }
+
     return menus
 }
 

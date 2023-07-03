@@ -84,6 +84,24 @@ function refreshAssetDb() {
         req.end();
     });
 }
+function getNodeComponents(node, result) {
+    var _a, _b;
+    console.warn("getNodeComponents node", node.name, node);
+    let coms = (_a = node.components) !== null && _a !== void 0 ? _a : [];
+    for (let index = 0; index < coms.length; index++) {
+        const com = coms[index];
+        // console.warn("getNodeComponents", com)
+        if (!(com instanceof cc_4.UITransform)) {
+            result.push(com);
+        }
+        break;
+    }
+    let children = (_b = node.children) !== null && _b !== void 0 ? _b : [];
+    for (let index = 0; index < children.length; index++) {
+        const child = children[index];
+        getNodeComponents(child, result);
+    }
+}
 /**
  * @en Registration method for the main process of Extension
  * @zh 为扩展的主进程的注册方法
@@ -195,9 +213,10 @@ exports.methods = {
                     else {
                         if (times > 0) {
                             tryAddComponent(times);
+                            console.warn(`${name}脚本添加成功`);
                         }
                         else {
-                            console.warn("组件没有添加到节点上");
+                            console.warn(`${name}脚本没有添加到节点上`);
                         }
                     }
                 }, 100);
@@ -206,6 +225,57 @@ exports.methods = {
         }
         catch (error) {
             console.warn(`createComponent open ${template} fail`, error);
+        }
+    },
+    //获取场景子节点自定脚本
+    getSceneComponent() {
+        var _a;
+        let scene = director.getScene();
+        let result = [];
+        let children = (_a = scene.children) !== null && _a !== void 0 ? _a : [];
+        for (let index = 0; index < children.length; index++) {
+            const child = children[index];
+            getNodeComponents(child, result);
+        }
+        return result;
+    },
+    async exportComToScript(...args) {
+        let scriptName = args[0];
+        let scriptID = args[1];
+        let scriptAssetUuid = args[2];
+        let propertyName = args[3];
+        let exportType = args[4];
+        let exportUuid = args[5];
+        let isNode = args[6];
+        console.log("exportComToScript", scriptName, scriptID, scriptAssetUuid, propertyName, exportType, exportUuid, isNode);
+        let cls = cc_5.js.getClassById(scriptID);
+        let instance = new cls();
+        let props = Object.getOwnPropertyNames(instance);
+        if (props.indexOf(propertyName) != -1) {
+            console.warn(`${scriptName} already has Property of ${propertyName}`);
+            return;
+        }
+        let path = await Editor.Message.request("asset-db", "query-path", scriptAssetUuid);
+        try {
+            let str = fs_1.default.readFileSync(path, 'utf8');
+            str = str.replace("extends Component {", `extends Component {\n\t@property(${exportType})\n\t${propertyName} : ${exportType}\n`);
+            let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/;
+            const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
+            console.warn("modifiedRegex", modifiedRegex);
+            if (!modifiedRegex.test(str)) {
+                str = `import { ${exportType} } from 'cc'\n` + str;
+            }
+            console.debug("readFileSync", str);
+            fs_1.default.writeFileSync(path, str);
+            //刷新资源
+            await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
+            //编译代码
+            await refreshAssetDb();
+            let node = director.getScene();
+            node.getComponentsInChildren(scriptName);
+        }
+        catch (error) {
+            console.warn(`createComponent open ${path} fail`, error);
         }
     }
 };
