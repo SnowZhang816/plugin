@@ -103,13 +103,54 @@ async function refreshInspector(node) {
         }
     }
 }
+function findInspectorRootNode(node) {
+    console.log("findInspectorRootNode", node);
+    let parent = node.parent;
+    if (!parent || parent.name == "should_hide_in_hierarchy") {
+        return node;
+    }
+    else {
+        return findInspectorRootNode(node.parent);
+    }
+}
+function getValidCom(node, result) {
+    var _a, _b;
+    let components = (_a = node.components) !== null && _a !== void 0 ? _a : [];
+    for (let index = 0; index < components.length; index++) {
+        const component = components[index];
+        let name = component.constructor.name;
+        console.log("getValidCom", name);
+        let cls = cc_5.js.getClassByName(name);
+        console.log("getValidCom", cls);
+        if (cls) {
+            result.push(name);
+        }
+    }
+    let children = (_b = node.children) !== null && _b !== void 0 ? _b : [];
+    for (let index = 0; index < children.length; index++) {
+        const child = children[index];
+        getValidCom(child, result);
+    }
+}
 /**
  * @en Registration method for the main process of Extension
  * @zh 为扩展的主进程的注册方法
  */
 exports.methods = {
-    log() {
+    getValidCom(...args) {
         console.log("hello world");
+        let nodeUuid = args[0];
+        let scene = director.getScene();
+        let exportNode = findByUUID(scene, nodeUuid);
+        if (!exportNode) {
+            console.warn(`exportComToScript can't find node of $}`);
+            return;
+        }
+        let node = findInspectorRootNode(exportNode);
+        console.log("findInspectorRootNode res", node);
+        let result = [];
+        getValidCom(node, result);
+        return result;
     },
     asyncParentSize() {
         let nodes = Editor.Selection.getSelected("node");

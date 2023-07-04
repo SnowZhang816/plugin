@@ -42,8 +42,8 @@ async function onNodeMenu(t) {
         click() {
             const options = {
                 name: "script-help",
-                method: 'asyncParentSize',
-                args: []
+                method: 'log',
+                args: [t.uuid]
             };
             Editor.Message.request('scene', 'execute-scene-script', options);
         },
@@ -67,12 +67,20 @@ async function onNodeMenu(t) {
         });
     }
     //导出节点到组件脚本中
+    const options = {
+        name: "script-help",
+        method: 'getValidCom',
+        args: [uuid]
+    };
+    let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options);
+    nodeValidComponents = nodeValidComponents !== null && nodeValidComponents !== void 0 ? nodeValidComponents : [];
+    console.warn("sceneComponents nodeValidComponents", nodeValidComponents);
     let sceneComponents = await Editor.Message.request('scene', 'query-components');
     console.warn("sceneComponents sceneComponents", sceneComponents);
     let valids = [];
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];
-        if (component.assetUuid && component.name != 'internal.DebugViewRuntimeControl') {
+        if (component.assetUuid && nodeValidComponents.indexOf(component.name.replace('cc.', '')) != -1) {
             valids.push(component);
         }
     }

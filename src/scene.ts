@@ -113,13 +113,56 @@ async function refreshInspector(node : Node) {
     }
 }
 
+function findInspectorRootNode(node : Node) : Node {
+    console.log("findInspectorRootNode", node)
+    let parent = node.parent
+    if (!parent || parent.name == "should_hide_in_hierarchy"){
+        return node
+    } else {
+        return findInspectorRootNode(node.parent as Node)
+    }
+}
+
+function getValidCom(node : Node, result : any[]){
+    let components = node.components ?? []
+    for (let index = 0; index < components.length; index++) {
+        const component = components[index];
+        let name = component.constructor.name
+        console.log("getValidCom", name)
+        let cls = js.getClassByName(name)
+        console.log("getValidCom", cls)
+        if (cls) {
+            result.push(name)
+        }
+    }
+    let children = node.children ?? []
+    for (let index = 0; index < children.length; index++) {
+        const child = children[index];
+        getValidCom(child, result)
+    }
+}
+
 /**
  * @en Registration method for the main process of Extension
  * @zh 为扩展的主进程的注册方法
  */
 export const methods: { [key: string]: (...any: any) => any } = {
-    log() {
+    getValidCom(...args: any) {
         console.log("hello world")
+        let nodeUuid = args[0]
+        let scene = director.getScene() as Node
+        let exportNode = findByUUID(scene, nodeUuid) as Node
+        if (!exportNode) {
+            console.warn(`exportComToScript can't find node of $}`)
+            return
+        }
+
+        let node = findInspectorRootNode(exportNode) as Node
+        console.log("findInspectorRootNode res", node)
+        let result : any[] = []
+        getValidCom(node, result)
+
+        return result
     },
 
     asyncParentSize() {

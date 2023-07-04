@@ -45,8 +45,8 @@ export async function onNodeMenu(t : any) {
         click() {
             const options: ExecuteSceneScriptMethodOptions = {
                 name: "script-help",
-                method: 'asyncParentSize',
-                args: []
+                method: 'log',
+                args: [t.uuid]
             };
     
             Editor.Message.request('scene', 'execute-scene-script', options)
@@ -58,7 +58,7 @@ export async function onNodeMenu(t : any) {
     let uuid = t.uuid
     let resPath = t.prefab.assetUuid
     if (resPath && resPath != '') {
-        menus.push(        {
+        menus.push({
             label: 'i18n:script-help.menu.createComponent',
             click() {
                 console.warn("assets-hierarchy onRootMenu click")
@@ -74,12 +74,20 @@ export async function onNodeMenu(t : any) {
     }
     
     //导出节点到组件脚本中
+    const options: ExecuteSceneScriptMethodOptions = {
+        name: "script-help",
+        method: 'getValidCom',
+        args: [uuid]
+    };
+    let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options) as any[]
+    nodeValidComponents = nodeValidComponents ?? []
+    console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
     let sceneComponents = await Editor.Message.request('scene', 'query-components')
     console.warn("sceneComponents sceneComponents", sceneComponents)
     let valids:any[] = []
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];
-        if (component.assetUuid && component.name != 'internal.DebugViewRuntimeControl') {
+        if (component.assetUuid && nodeValidComponents.indexOf(component.name.replace('cc.','')) != -1) {
             valids.push(component)
         }
     }
