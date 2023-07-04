@@ -19,15 +19,14 @@ function onCreateMenu(t) {
 }
 exports.onCreateMenu = onCreateMenu;
 ;
-function getSubMenu(propertyName, propertyType, uuid, isNode, scriptLabel, cid, assetUuid, resPath) {
+function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid) {
     return {
-        label: scriptLabel,
+        label: scriptName,
         click() {
-            console.warn("click", uuid, isNode, scriptLabel, cid);
             const options = {
                 name: "script-help",
                 method: 'exportComToScript',
-                args: [scriptLabel, cid, assetUuid, propertyName, propertyType, uuid, isNode, resPath]
+                args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid]
             };
             Editor.Message.request('scene', 'execute-scene-script', options);
         }
@@ -69,6 +68,7 @@ async function onNodeMenu(t) {
     }
     //导出节点到组件脚本中
     let sceneComponents = await Editor.Message.request('scene', 'query-components');
+    console.warn("sceneComponents sceneComponents", sceneComponents);
     let valids = [];
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];
@@ -81,7 +81,7 @@ async function onNodeMenu(t) {
         let subSceneComMenus = [];
         for (let index = 0; index < valids.length; index++) {
             const sceneCom = valids[index];
-            subSceneComMenus.push(getSubMenu(t.name, "Node", t.uuid, true, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath));
+            subSceneComMenus.push(getSubMenu(t.uuid, t.name, "Node", sceneCom.name, sceneCom.cid, sceneCom.assetUuid));
         }
         let subMenus = [];
         subMenus.push({
@@ -91,11 +91,11 @@ async function onNodeMenu(t) {
         let nodeComponents = (_a = t.components) !== null && _a !== void 0 ? _a : [];
         for (let index = 0; index < nodeComponents.length; index++) {
             const nodeCom = nodeComponents[index];
-            console.warn("nodeComponents element", nodeCom);
+            console.warn("nodeComponents nodeCom", nodeCom);
             subSceneComMenus = [];
             for (let index = 0; index < valids.length; index++) {
                 const sceneCom = valids[index];
-                subSceneComMenus.push(getSubMenu(t.name, nodeCom.type.replace('cc.', ''), nodeCom.value, false, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, resPath));
+                subSceneComMenus.push(getSubMenu(t.uuid, t.name, nodeCom.type, sceneCom.name, sceneCom.cid, sceneCom.assetUuid));
             }
             subMenus.push({
                 label: nodeCom.type + " 到",

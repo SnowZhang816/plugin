@@ -11,6 +11,7 @@ import http from 'http';
 import { js } from "cc";
 import { Component } from "cc";
 import { __private } from "cc";
+import { Constructor } from "cc";
 const { director } = require('cc');
 
 
@@ -56,6 +57,7 @@ function getDbPath(filename: string): string {
     return str.substring(0, lastIndex);
 }
 
+//编译代码
 function refreshAssetDb(){
     return new Promise((resolve)=>{
         const options = {
@@ -91,21 +93,23 @@ function refreshAssetDb(){
     })
 }
 
-function getNodeComponents(node : Node, result : any[]) : any {
-    console.warn("getNodeComponents node", node.name, node)
-    let coms = node.components ?? []
-    for (let index = 0; index < coms.length; index++) {
-        const com = coms[index];
-        // console.warn("getNodeComponents", com)
-        if (!(com instanceof UITransform)) {
-            result.push(com)
+//刷新属性面板
+async function refreshInspector(node : Node) {
+    let nodes = Editor.Selection.getSelected("node")
+    if (nodes.length == 1) {
+        let uuid = nodes[0]
+        let scene = director.getScene() as Node
+        let selectNode = findByUUID(scene, uuid)
+        if (selectNode && selectNode === node) {
+            // console.warn(`inspector:update`)
+            //TODO暂时通过 取消/选中 的方式来刷新一下
+            Editor.Selection.unselect('node', selectNode.uuid)
+            setTimeout(async () => {
+                Editor.Selection.select('node', selectNode.uuid)
+            }, 300);
+
+            //Editor.Message.send('inspector', "inspector:update", {id:selectNode.uuid, path = ? })
         }
-        break
-    }
-    let children = node.children ?? []
-    for (let index = 0; index < children.length; index++) {
-        const child = children[index];
-        getNodeComponents(child, result)
     }
 }
 
@@ -248,46 +252,39 @@ export const methods: { [key: string]: (...any: any) => any } = {
         }
     },
 
-    //获取场景子节点自定脚本
-    getSceneComponent(){
-        let scene = director.getScene()
-        let result : any[] = []
-        let children = scene.children ?? []
-        for (let index = 0; index < children.length; index++) {
-            const child = children[index];
-            getNodeComponents(child, result)
-        }
-        return result
-    },
-
     async exportComToScript(...args: any){
-        let scriptName = args[0] 
-        let scriptID = args[1]
-        let scriptAssetUuid = args[2]
-        let propertyName = args[3]
-        let exportType = args[4]
-        let exportUuid = args[5]
-        let isNode = args[6]
-        let prefabUuid = args[7]
+        let nodeUuid = args[0]
+        let nodeName = args[1]
+        let exportType = args[2] as string
+        let scriptName = args[3] 
+        let scriptCid = args[4]
+        let scriptUuid = args[5]
 
-        console.log("exportComToScript", scriptName, scriptID, scriptAssetUuid, propertyName, exportType, exportUuid, isNode)
 
-        let cls = js.getClassById(scriptID)
+        console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid)
+
+        let cls = js.getClassById(scriptCid)
         let instance = new cls()
         let props = Object.getOwnPropertyNames(instance)
-        if (props.indexOf(propertyName) != -1) {
-            console.warn(`${scriptName} already has Property of ${propertyName}`)
+        if (props.indexOf(nodeName) != -1) {
+            console.warn(`${scriptName} already has Property of ${nodeName}`)
             return
         }
 
-        let path = await Editor.Message.request("asset-db", "query-path", scriptAssetUuid)
+        let path = await Editor.Message.request("asset-db", "query-path", scriptUuid)
         try {
             let str = fs.readFileSync(path, 'utf8')
-            str = str.replace("extends Component {", `extends Component {\n\t@property(${exportType})\n\t${propertyName} : ${exportType}\n`)
-            let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/
-            const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
-            if (!modifiedRegex.test(str)) {
-                str = `import { ${exportType} } from 'cc'\n` + str
+            //引擎自带脚本/Node
+            if (exportType.startsWith("cc.") || exportType == "Node" ) {
+                let exportTypeWithOutCC = exportType.replace('cc.','')
+                str = str.replace("extends Component {", `extends Component {\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`)
+                let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/
+                const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
+                if (!modifiedRegex.test(str)) {
+                    str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str
+                }
+            } else {
+
             }
 
             console.debug("readFileSync", str)
@@ -299,39 +296,42 @@ export const methods: { [key: string]: (...any: any) => any } = {
             //编译代码
             await refreshAssetDb()
             
-            let node = director.getScene() as Node
-            let coms = node.getComponentsInChildren(scriptName)
-            console.warn("getComponentsInChildren", coms)
+            let scene = director.getScene() as Node
+            let coms = scene.getComponentsInChildren(scriptName)
+            if (coms.length < 0) {
+                console.warn(`exportComToScript can't find component of ${scriptName}`)
+                return
+            }
 
-            let exportNode = findByUUID(node, exportUuid)
-            console.warn("exportNode", exportNode)
+            let exportNode = findByUUID(scene, nodeUuid) as Node
+            if (!exportNode) {
+                console.warn(`exportComToScript can't find node of ${nodeName}`)
+                return
+            }
 
             for (let index = 0; index < coms.length; index++) {
                 const com = coms[index] as any;
-                console.warn("com", com)
                 let props = Object.getOwnPropertyNames(com)
-                if (props.indexOf(propertyName) != -1) {
-                    com[propertyName] = exportNode
-                }
-            }
-
-            let prefabPath = await Editor.Message.request("asset-db", "query-path", prefabUuid)
-
-            let prefabStr = fs.readFileSync(prefabPath, 'utf8')
-            let prefabInfo = JSON.parse(prefabStr)
-            console.log("prefabInfo", prefabInfo)
-
-            for (let i = 0; i < prefabInfo.length; i++) {
-                const info = prefabInfo[i];
-                if (info.__type__ == scriptID) {
-                    info[propertyName] = {
-                        __id__ : 2
+                if (props.indexOf(nodeName) != -1) {
+                    if (exportType == "Node") {
+                        com[nodeName] = exportNode
+                        refreshInspector(com.node)
+                    } else {
+                        if (exportNode.getComponent(exportType)) {
+                            com[nodeName] = exportNode.getComponent(exportType)
+                            refreshInspector(com.node)
+                        } else {
+                            console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`) 
+                        }
                     }
+                } else {
+
                 }
             }
-            
+
+
         } catch (error) {
-            console.warn(`createComponent open ${path} fail`, error)
+            console.error(`exportComToScript open ${path} fail`, error)
         }
     }
 };
