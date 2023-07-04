@@ -340,6 +340,9 @@ export const methods: { [key: string]: (...any: any) => any } = {
 
                 //编译代码
                 await refreshAssetDb()
+
+
+                
             }
             catch (error) {
                 console.error(`exportComToScript open ${path} fail`, error)
@@ -359,27 +362,39 @@ export const methods: { [key: string]: (...any: any) => any } = {
             return
         }
 
-        for (let index = 0; index < coms.length; index++) {
-            const com = coms[index] as any;
-            let props = Object.getOwnPropertyNames(com)
-            console.error("props11111111111")
-            if (props.indexOf(nodeName) != -1) {
-                console.error("props222222222")
-                if (exportType == "Node") {
-                    com[nodeName] = exportNode
-                    refreshInspector(com.node)
-                } else {
-                    if (exportNode.getComponent(exportType)) {
-                        com[nodeName] = exportNode.getComponent(exportType)
-                        refreshInspector(com.node)
+        let trySet = (times : number)=>{
+            setTimeout(async () => {
+                times = times - 1
+                let success = true
+                for (let index = 0; index < coms.length; index++) {
+                    const com = coms[index] as any;
+                    let props = Object.getOwnPropertyNames(com)
+                    if (props.indexOf(nodeName) != -1) {
+                        if (exportType == "Node") {
+                            com[nodeName] = exportNode
+                            refreshInspector(com.node)
+                        } else {
+                            if (exportNode.getComponent(exportType)) {
+                                com[nodeName] = exportNode.getComponent(exportType)
+                                refreshInspector(com.node)
+                            } else {
+                                console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+                            }
+                        }
                     } else {
-                        console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+                        success = false
+                        break
                     }
                 }
-            } else {
-
-            }
+                if (!success && times > 0) {
+                    trySet(times)
+                }else {
+                    
+                }
+            }, 100)
         }
+
+        trySet(10)
     }
 };
 

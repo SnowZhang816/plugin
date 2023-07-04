@@ -323,29 +323,41 @@ exports.methods = {
             console.warn(`exportComToScript can't find node of ${nodeName}`);
             return;
         }
-        for (let index = 0; index < coms.length; index++) {
-            const com = coms[index];
-            let props = Object.getOwnPropertyNames(com);
-            console.error("props11111111111");
-            if (props.indexOf(nodeName) != -1) {
-                console.error("props222222222");
-                if (exportType == "Node") {
-                    com[nodeName] = exportNode;
-                    refreshInspector(com.node);
-                }
-                else {
-                    if (exportNode.getComponent(exportType)) {
-                        com[nodeName] = exportNode.getComponent(exportType);
-                        refreshInspector(com.node);
+        let trySet = (times) => {
+            setTimeout(async () => {
+                times = times - 1;
+                let success = true;
+                for (let index = 0; index < coms.length; index++) {
+                    const com = coms[index];
+                    let props = Object.getOwnPropertyNames(com);
+                    if (props.indexOf(nodeName) != -1) {
+                        if (exportType == "Node") {
+                            com[nodeName] = exportNode;
+                            refreshInspector(com.node);
+                        }
+                        else {
+                            if (exportNode.getComponent(exportType)) {
+                                com[nodeName] = exportNode.getComponent(exportType);
+                                refreshInspector(com.node);
+                            }
+                            else {
+                                console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`);
+                            }
+                        }
                     }
                     else {
-                        console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`);
+                        success = false;
+                        break;
                     }
                 }
-            }
-            else {
-            }
-        }
+                if (!success && times > 0) {
+                    trySet(times);
+                }
+                else {
+                }
+            }, 100);
+        };
+        trySet(10);
     }
 };
 /**
