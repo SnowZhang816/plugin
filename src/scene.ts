@@ -58,8 +58,8 @@ function getDbPath(filename: string): string {
 }
 
 //编译代码
-function refreshAssetDb(){
-    return new Promise((resolve)=>{
+function refreshAssetDb() {
+    return new Promise((resolve) => {
         const options = {
             hostname: 'localhost',
             port: 7456,
@@ -77,10 +77,10 @@ function refreshAssetDb(){
                 console.warn("http.request end", data); // 打印接收到的响应数据
                 if (data == "success") {
                     resolve(true)
-                }else{
+                } else {
                     resolve(false)
                 }
-                
+
             });
         });
 
@@ -94,7 +94,7 @@ function refreshAssetDb(){
 }
 
 //刷新属性面板
-async function refreshInspector(node : Node) {
+async function refreshInspector(node: Node) {
     let nodes = Editor.Selection.getSelected("node")
     if (nodes.length == 1) {
         let uuid = nodes[0]
@@ -113,17 +113,17 @@ async function refreshInspector(node : Node) {
     }
 }
 
-function findInspectorRootNode(node : Node) : Node {
+function findInspectorRootNode(node: Node): Node {
     console.log("findInspectorRootNode", node)
     let parent = node.parent
-    if (!parent || parent.name == "should_hide_in_hierarchy"){
+    if (!parent || parent.name == "should_hide_in_hierarchy") {
         return node
     } else {
         return findInspectorRootNode(node.parent as Node)
     }
 }
 
-function getValidCom(node : Node, result : any[]){
+function getValidCom(node: Node, result: any[]) {
     let components = node.components ?? []
     for (let index = 0; index < components.length; index++) {
         const component = components[index];
@@ -159,7 +159,7 @@ export const methods: { [key: string]: (...any: any) => any } = {
 
         let node = findInspectorRootNode(exportNode) as Node
         console.log("findInspectorRootNode res", node)
-        let result : any[] = []
+        let result: any[] = []
         getValidCom(node, result)
 
         return result
@@ -272,9 +272,9 @@ export const methods: { [key: string]: (...any: any) => any } = {
                 setTimeout(async () => {
                     let class1 = js.getClassByName(name);
                     if (class1) {
-                        let options : CreateComponentOptions = {
-                            uuid : uuid,
-                            component : name
+                        let options: CreateComponentOptions = {
+                            uuid: uuid,
+                            component: name
                         }
                         Editor.Message.request("scene", "create-component", options)
                     }
@@ -295,11 +295,11 @@ export const methods: { [key: string]: (...any: any) => any } = {
         }
     },
 
-    async exportComToScript(...args: any){
+    async exportComToScript(...args: any) {
         let nodeUuid = args[0]
         let nodeName = args[1]
         let exportType = args[2] as string
-        let scriptName = args[3] 
+        let scriptName = args[3]
         let scriptCid = args[4]
         let scriptUuid = args[5]
 
@@ -309,72 +309,76 @@ export const methods: { [key: string]: (...any: any) => any } = {
         let cls = js.getClassById(scriptCid)
         let instance = new cls()
         let props = Object.getOwnPropertyNames(instance)
+        let writeScript = true
         if (props.indexOf(nodeName) != -1) {
             console.warn(`${scriptName} already has Property of ${nodeName}`)
-            return
+            writeScript = false
         }
 
-        let path = await Editor.Message.request("asset-db", "query-path", scriptUuid)
-        try {
-            let str = fs.readFileSync(path, 'utf8')
-            //引擎自带脚本/Node
-            if (exportType.startsWith("cc.") || exportType == "Node" ) {
-                let exportTypeWithOutCC = exportType.replace('cc.','')
-                str = str.replace("extends Component {", `extends Component {\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`)
-                let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/
-                const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
-                if (!modifiedRegex.test(str)) {
-                    str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str
-                }
-            } else {
-
-            }
-
-            console.debug("readFileSync", str)
-            fs.writeFileSync(path, str)
-
-            //刷新资源
-            await Editor.Message.request("asset-db", "refresh-asset", "db://assets")
-
-            //编译代码
-            await refreshAssetDb()
-            
-            let scene = director.getScene() as Node
-            let coms = scene.getComponentsInChildren(scriptName)
-            if (coms.length < 0) {
-                console.warn(`exportComToScript can't find component of ${scriptName}`)
-                return
-            }
-
-            let exportNode = findByUUID(scene, nodeUuid) as Node
-            if (!exportNode) {
-                console.warn(`exportComToScript can't find node of ${nodeName}`)
-                return
-            }
-
-            for (let index = 0; index < coms.length; index++) {
-                const com = coms[index] as any;
-                let props = Object.getOwnPropertyNames(com)
-                if (props.indexOf(nodeName) != -1) {
-                    if (exportType == "Node") {
-                        com[nodeName] = exportNode
-                        refreshInspector(com.node)
-                    } else {
-                        if (exportNode.getComponent(exportType)) {
-                            com[nodeName] = exportNode.getComponent(exportType)
-                            refreshInspector(com.node)
-                        } else {
-                            console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`) 
-                        }
+        if (writeScript) {
+            try {
+                let path = await Editor.Message.request("asset-db", "query-path", scriptUuid)
+                let str = fs.readFileSync(path, 'utf8')
+                //引擎自带脚本/Node
+                if (exportType.startsWith("cc.") || exportType == "Node") {
+                    let exportTypeWithOutCC = exportType.replace('cc.', '')
+                    str = str.replace("extends Component {", `extends Component {\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`)
+                    let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/
+                    const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
+                    if (!modifiedRegex.test(str)) {
+                        str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str
                     }
                 } else {
 
                 }
+
+                console.debug("readFileSync", str)
+                fs.writeFileSync(path, str)
+
+                //刷新资源
+                await Editor.Message.request("asset-db", "refresh-asset", "db://assets")
+
+                //编译代码
+                await refreshAssetDb()
             }
+            catch (error) {
+                console.error(`exportComToScript open ${path} fail`, error)
+            }
+        }
 
+        let scene = director.getScene() as Node
+        let coms = scene.getComponentsInChildren(scriptName)
+        if (coms.length < 0) {
+            console.warn(`exportComToScript can't find component of ${scriptName}`)
+            return
+        }
 
-        } catch (error) {
-            console.error(`exportComToScript open ${path} fail`, error)
+        let exportNode = findByUUID(scene, nodeUuid) as Node
+        if (!exportNode) {
+            console.warn(`exportComToScript can't find node of ${nodeName}`)
+            return
+        }
+
+        for (let index = 0; index < coms.length; index++) {
+            const com = coms[index] as any;
+            let props = Object.getOwnPropertyNames(com)
+            console.error("props11111111111")
+            if (props.indexOf(nodeName) != -1) {
+                console.error("props222222222")
+                if (exportType == "Node") {
+                    com[nodeName] = exportNode
+                    refreshInspector(com.node)
+                } else {
+                    if (exportNode.getComponent(exportType)) {
+                        com[nodeName] = exportNode.getComponent(exportType)
+                        refreshInspector(com.node)
+                    } else {
+                        console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+                    }
+                }
+            } else {
+
+            }
         }
     }
 };
