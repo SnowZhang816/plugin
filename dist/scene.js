@@ -276,7 +276,8 @@ exports.methods = {
         let scriptName = args[3];
         let scriptCid = args[4];
         let scriptUuid = args[5];
-        console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid);
+        let exportScriptUuid = args[6];
+        console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
         let cls = cc_5.js.getClassById(scriptCid);
         let instance = new cls();
         let props = Object.getOwnPropertyNames(instance);
@@ -287,22 +288,52 @@ exports.methods = {
         }
         if (writeScript) {
             try {
-                let path = await Editor.Message.request("asset-db", "query-path", scriptUuid);
-                let str = fs_1.default.readFileSync(path, 'utf8');
+                let pathScript = await Editor.Message.request("asset-db", "query-path", scriptUuid);
+                let str = fs_1.default.readFileSync(pathScript, 'utf8');
                 //引擎自带脚本/Node
                 if (exportType.startsWith("cc.") || exportType == "Node") {
                     let exportTypeWithOutCC = exportType.replace('cc.', '');
-                    str = str.replace("extends Component {", `extends Component {\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`);
-                    let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/;
-                    const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
-                    if (!modifiedRegex.test(str)) {
-                        str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str;
+                    let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
+                    let headRegexArray = headRegex.exec(str);
+                    console.warn("headRegexStr", headRegexArray);
+                    if (headRegexArray) {
+                        let headRegexStr = headRegexArray[0];
+                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`);
+                        let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/;
+                        const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
+                        if (!modifiedRegex.test(str)) {
+                            str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str;
+                        }
+                    }
+                    else {
+                        console.warn(`${scriptName} can't has Regex Head`);
                     }
                 }
                 else {
+                    //db://assets/app/modules/match/matchModules/prefab/bgSprite.ts
+                    let exportScriptPath = await Editor.Message.request("asset-db", "query-url", exportScriptUuid);
+                    let info = path_1.default.parse(exportScriptPath);
+                    console.log("exportScriptPath", exportScriptPath, info);
+                    let headPath = info.dir.replace("db://assets/", "");
+                    let importPath = headPath + '/' + info.name;
+                    console.log("exportScriptPath", importPath);
+                    let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
+                    let headRegexArray = headRegex.exec(str);
+                    if (headRegexArray) {
+                        let headRegexStr = headRegexArray[0];
+                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportType})\n\t${nodeName} : ${exportType}\n`);
+                        let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from/;
+                        const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
+                        if (!modifiedRegex.test(str)) {
+                            str = `import { ${exportType} } from '${importPath}'\n` + str;
+                        }
+                    }
+                    else {
+                        console.warn(`${scriptName} can't has Regex Head`);
+                    }
                 }
                 console.debug("readFileSync", str);
-                fs_1.default.writeFileSync(path, str);
+                fs_1.default.writeFileSync(pathScript, str);
                 //刷新资源
                 await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
                 //编译代码
