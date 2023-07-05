@@ -114,7 +114,7 @@ async function refreshInspector(node: Node) {
 }
 
 function findInspectorRootNode(node: Node): Node {
-    console.log("findInspectorRootNode", node)
+    // console.log("findInspectorRootNode", node)
     let parent = node.parent
     if (!parent || parent.name == "should_hide_in_hierarchy") {
         return node
@@ -377,12 +377,6 @@ export const methods: { [key: string]: (...any: any) => any } = {
         }
 
         let scene = director.getScene() as Node
-        let coms = scene.getComponentsInChildren(scriptName)
-        if (coms.length < 0) {
-            console.warn(`exportComToScript can't find component of ${scriptName}`)
-            return
-        }
-
         let exportNode = findByUUID(scene, nodeUuid) as Node
         if (!exportNode) {
             console.warn(`exportComToScript can't find node of ${nodeName}`)
@@ -393,32 +387,43 @@ export const methods: { [key: string]: (...any: any) => any } = {
             setTimeout(async () => {
                 times = times - 1
                 let success = true
-                for (let index = 0; index < coms.length; index++) {
-                    const com = coms[index] as any;
-                    let props = Object.getOwnPropertyNames(com)
-                    if (props.indexOf(nodeName) != -1) {
-                        if (exportType == "Node") {
-                            com[nodeName] = exportNode
-                            refreshInspector(com.node)
-                        } else {
-                            if (exportNode.getComponent(exportType)) {
-                                com[nodeName] = exportNode.getComponent(exportType)
+                let scene = director.getScene() as Node
+                let coms = scene.getComponentsInChildren(scriptName)
+                if (coms.length < 0) {
+                    success = false
+                } else {
+                    for (let index = 0; index < coms.length; index++) {
+                        const com = coms[index] as any;
+                        let props = Object.getOwnPropertyNames(com)
+                        if (props.indexOf(nodeName) != -1) {
+                            if (exportType == "Node") {
+                                com[nodeName] = exportNode
                                 refreshInspector(com.node)
                             } else {
-                                console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+                                if (exportNode.getComponent(exportType)) {
+                                    com[nodeName] = exportNode.getComponent(exportType)
+                                    refreshInspector(com.node)
+                                } else {
+                                    console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+                                }
                             }
+                        } else {
+                            console.log(`exportComToScript can't find prop of ${nodeName}`)
+                            success = false
+                            break
                         }
-                    } else {
-                        success = false
-                        break
                     }
                 }
+
                 if (!success && times > 0) {
+                    //编译代码
+                    await refreshAssetDb()
+
                     trySet(times)
                 }else {
                     
                 }
-            }, 100)
+            }, 10)
         }
 
         trySet(10)
