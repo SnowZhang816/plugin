@@ -69,8 +69,9 @@ function refreshAssetDb() {
                 data += chunk;
             });
             res.on('end', () => {
-                console.warn("http.request end", data); // 打印接收到的响应数据
+                // console.warn("http.request end", data); // 打印接收到的响应数据
                 if (data == "success") {
+                    console.log("compile script complete");
                     resolve(true);
                 }
                 else {
@@ -132,6 +133,33 @@ function getValidCom(node, result, result1) {
         const child = children[index];
         getValidCom(child, result);
     }
+}
+function waitCls(scriptCid, exportName) {
+    return new Promise((resolve, reject) => {
+        let retry = (times) => {
+            times--;
+            setTimeout(() => {
+                // console.log("try access property", times)
+                let has = false;
+                let cls = cc_5.js.getClassById(scriptCid);
+                if (cls) {
+                    let instance = new cls();
+                    let props = Object.getOwnPropertyNames(instance);
+                    if (props.indexOf(exportName) != -1) {
+                        console.log("register property success");
+                        has = true;
+                    }
+                }
+                if (!has && times > 0) {
+                    retry(times);
+                }
+                else {
+                    resolve(has);
+                }
+            }, 120);
+        };
+        retry(20);
+    });
 }
 /**
  * @en Registration method for the main process of Extension
@@ -278,29 +306,36 @@ exports.methods = {
         let scriptCid = args[4];
         let scriptUuid = args[5];
         let exportScriptUuid = args[6];
-        console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
-        let cls = cc_5.js.getClassById(scriptCid);
-        let instance = new cls();
-        let props = Object.getOwnPropertyNames(instance);
-        let writeScript = true;
-        if (props.indexOf(nodeName) != -1) {
-            console.warn(`${scriptName} already has Property of ${nodeName}`);
-            writeScript = false;
-        }
-        if (writeScript) {
-            try {
-                let pathScript = await Editor.Message.request("asset-db", "query-path", scriptUuid);
-                let str = fs_1.default.readFileSync(pathScript, 'utf8');
+        let exportName = nodeName + exportType.replace('cc.', '');
+        // console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
+        try {
+            let cls = cc_5.js.getClassById(scriptCid);
+            let instance = new cls();
+            let props = Object.getOwnPropertyNames(instance);
+            let pathScript = await Editor.Message.request("asset-db", "query-path", scriptUuid);
+            let str = fs_1.default.readFileSync(pathScript, 'utf8');
+            let writeScript = true;
+            if (props.indexOf(exportName) != -1) {
+                // console.warn(`${scriptName} already has Property of ${exportName}`)
+                writeScript = false;
+            }
+            // let exportNameRegex = /XXXX\s+:/
+            // const modifiedNameRegex = new RegExp(exportNameRegex.source.replace("XXXX", exportName), exportNameRegex.flags);
+            // if (modifiedNameRegex.test(str)){
+            //     console.warn(`modifiedNameRegex: ${scriptName} already has Property of ${exportName}`)
+            //     writeScript = false
+            // }
+            if (writeScript) {
                 //引擎自带脚本/Node
                 if (exportType.startsWith("cc.") || exportType == "Node") {
                     let exportTypeWithOutCC = exportType.replace('cc.', '');
                     let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
                     let headRegexArray = headRegex.exec(str);
-                    console.warn("headRegexStr", headRegexArray);
+                    // console.warn("headRegexStr", headRegexArray)
                     if (headRegexArray) {
                         let headRegexStr = headRegexArray[0];
-                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportTypeWithOutCC})\n\t${nodeName} : ${exportTypeWithOutCC}\n`);
-                        let regex = /import \{[^}]*XXXX[^}]*\} from 'cc'/;
+                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportTypeWithOutCC})\n\t${exportName} : ${exportTypeWithOutCC}\n`);
+                        let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from 'cc'/;
                         const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
                         if (!modifiedRegex.test(str)) {
                             str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str;
@@ -317,12 +352,12 @@ exports.methods = {
                     console.log("exportScriptPath", exportScriptPath, info);
                     let headPath = info.dir.replace("db://assets/", "");
                     let importPath = headPath + '/' + info.name;
-                    console.log("exportScriptPath", importPath);
+                    // console.log("exportScriptPath", importPath)
                     let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
                     let headRegexArray = headRegex.exec(str);
                     if (headRegexArray) {
                         let headRegexStr = headRegexArray[0];
-                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportType})\n\t${nodeName} : ${exportType}\n`);
+                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportType})\n\t${exportName} : ${exportType}\n`);
                         let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from/;
                         const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
                         if (!modifiedRegex.test(str)) {
@@ -339,10 +374,12 @@ exports.methods = {
                 await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
                 //编译代码
                 await refreshAssetDb();
+                //等待类注册完毕
+                await waitCls(scriptCid, exportName);
             }
-            catch (error) {
-                console.error(`exportComToScript open ${path_1.default} fail`, error);
-            }
+        }
+        catch (error) {
+            console.error(`exportComToScript try execute ${scriptName} fail`, error);
         }
         let scene = director.getScene();
         let exportNode = findByUUID(scene, nodeUuid);
@@ -350,77 +387,12 @@ exports.methods = {
             console.warn(`exportComToScript can't find node of ${nodeName}`);
             return;
         }
-        // let trySet = (times : number)=>{
-        //     console.log("trySet..........", times)
-        //     setTimeout(async () => {
-        //         times = times - 1
-        //         let success = true
-        //         let coms = scene.getComponentsInChildren(scriptName)
-        //         console.log("getComponentsInChildren", coms)
-        //         let result : any = []
-        //         let result1 : any = []
-        //         let exportNode1 = findByUUID(scene, nodeUuid) as Node
-        //         let rootNode = findInspectorRootNode(exportNode1)
-        //         getValidCom(rootNode, result, result1)
-        //         console.log("getValidCom rootNode", result, result1)
-        //         console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
-        //         let coms1 : any[] = []
-        //         for (let index = 0; index < result1.length; index++) {
-        //             const i = result1[index];
-        //             if (i.constructor.name == scriptName) {
-        //                 coms1.push(i)
-        //             }
-        //         }
-        //         if (coms1.length <= 0) {
-        //             success = false
-        //             console.warn(`exportComToScript can't find component of ${scriptName}`)
-        //         } else {
-        //             console.log("exportComToScript 1")
-        //             for (let index = 0; index < coms1.length; index++) {
-        //                 const com = coms1[index] as any;
-        //                 let props = Object.getOwnPropertyNames(com)
-        //                 if (props.indexOf(nodeName) != -1) {
-        //                     if (exportType == "Node") {
-        //                         com[nodeName] = exportNode
-        //                         console.log("exportComToScript success")
-        //                         refreshInspector(com.node)
-        //                     } else {
-        //                         if (exportNode.getComponent(exportType)) {
-        //                             com[nodeName] = exportNode.getComponent(exportType)
-        //                             console.log("exportComToScript success")
-        //                             refreshInspector(com.node)
-        //                         } else {
-        //                             console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
-        //                         }
-        //                     }
-        //                 } else {
-        //                     console.log(`exportComToScript can't find prop of ${nodeName}`)
-        //                     success = false
-        //                     break
-        //                 }
-        //             }
-        //         }
-        //         if (!success) {
-        //             //编译代码
-        //             // await refreshAssetDb()
-        //             if (times > 0) {
-        //                 trySet(times)
-        //             } else {
-        //                 console.warn(`exportComToScript fail`)
-        //             }
-        //         }
-        //     }, 500)
-        // }
-        // trySet(1)
         let success = true;
-        let coms = scene.getComponentsInChildren(scriptName);
-        console.log("getComponentsInChildren", coms);
         let result = [];
         let result1 = [];
-        let exportNode1 = findByUUID(scene, nodeUuid);
-        let rootNode = findInspectorRootNode(exportNode1);
+        let rootNode = findInspectorRootNode(exportNode);
         getValidCom(rootNode, result, result1);
-        console.log("getValidCom rootNode", result, result1);
+        // console.log("getValidCom rootNode", result, result1)
         // console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
         let coms1 = [];
         for (let index = 0; index < result1.length; index++) {
@@ -431,22 +403,22 @@ exports.methods = {
         }
         if (coms1.length <= 0) {
             success = false;
-            console.warn(`exportComToScript can't find component of ${scriptName}`);
+            console.warn(`exportComToScript can't find component of ${scriptName} then will retry`);
         }
         else {
-            console.log("exportComToScript 1", coms1);
+            // console.log("exportComToScript 1", coms1)
             for (let index = 0; index < coms1.length; index++) {
                 const com = coms1[index];
                 let props = Object.getOwnPropertyNames(com);
-                if (props.indexOf(nodeName) != -1) {
+                if (props.indexOf(exportName) != -1) {
                     if (exportType == "Node") {
-                        com[nodeName] = exportNode;
+                        com[exportName] = exportNode;
                         console.log("exportComToScript success");
                         refreshInspector(com.node);
                     }
                     else {
                         if (exportNode.getComponent(exportType)) {
-                            com[nodeName] = exportNode.getComponent(exportType);
+                            com[exportName] = exportNode.getComponent(exportType);
                             console.log("exportComToScript success");
                             refreshInspector(com.node);
                         }
@@ -456,20 +428,11 @@ exports.methods = {
                     }
                 }
                 else {
-                    console.log(`exportComToScript can't find prop of ${nodeName}`);
+                    console.log(`exportComToScript can't find prop of ${exportName} then will retry`);
                     success = false;
                     break;
                 }
             }
-        }
-        if (!success) {
-            //编译代码
-            // await refreshAssetDb()
-            // if (times > 0) {
-            //     trySet(times)
-            // } else {
-            //     console.warn(`exportComToScript fail`)
-            // }
         }
         return success;
     }

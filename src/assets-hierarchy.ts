@@ -37,13 +37,17 @@ function getSubMenu(nodeUuid: string, nodeName: string, propertyType: string, sc
             let retry = async (times : number) => {
                 times--
                 let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
-                console.log("assets-hierarchy exportComToScript", result)
+                // console.log("assets-hierarchy exportComToScript", result)
                 if (!result) {
                     if (times > 0) {
                         setTimeout(() => {
                             retry(times)
                         }, 100);
+                    } else {
+                        console.warn("assets-hierarchy exportComToScript fail")
                     }
+                } else {
+                    console.log("assets-hierarchy exportComToScript success")
                 }
             }
             retry(10)
@@ -76,7 +80,7 @@ async function getScriptExportMenu(t: any){
             }
         }
         if (valids.length > 0) {
-            console.warn("valids sceneComponents", valids)
+            // console.warn("valids sceneComponents", valids)
     
             let subSceneComMenus = []
             for (let index = 0; index < valids.length; index++) {
@@ -92,7 +96,7 @@ async function getScriptExportMenu(t: any){
             let nodeComponents = t.components ?? []
             for (let index = 0; index < nodeComponents.length; index++) {
                 const nodeCom = nodeComponents[index];
-                console.warn("nodeComponents nodeCom", nodeCom)
+                // console.warn("nodeComponents nodeCom", nodeCom)
                 let exportScriptUuid
                 if (!nodeCom.type.startsWith('cc.')) {
                     for (let i = 0; i < sceneComponents.length; i++) {

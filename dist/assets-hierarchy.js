@@ -34,13 +34,19 @@ function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scr
             let retry = async (times) => {
                 times--;
                 let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
-                console.log("assets-hierarchy exportComToScript", result);
+                // console.log("assets-hierarchy exportComToScript", result)
                 if (!result) {
                     if (times > 0) {
                         setTimeout(() => {
                             retry(times);
                         }, 100);
                     }
+                    else {
+                        console.warn("assets-hierarchy exportComToScript fail");
+                    }
+                }
+                else {
+                    console.log("assets-hierarchy exportComToScript success");
                 }
             };
             retry(10);
@@ -73,7 +79,7 @@ async function getScriptExportMenu(t) {
             }
         }
         if (valids.length > 0) {
-            console.warn("valids sceneComponents", valids);
+            // console.warn("valids sceneComponents", valids)
             let subSceneComMenus = [];
             for (let index = 0; index < valids.length; index++) {
                 const sceneCom = valids[index];
@@ -86,7 +92,7 @@ async function getScriptExportMenu(t) {
             let nodeComponents = (_a = t.components) !== null && _a !== void 0 ? _a : [];
             for (let index = 0; index < nodeComponents.length; index++) {
                 const nodeCom = nodeComponents[index];
-                console.warn("nodeComponents nodeCom", nodeCom);
+                // console.warn("nodeComponents nodeCom", nodeCom)
                 let exportScriptUuid;
                 if (!nodeCom.type.startsWith('cc.')) {
                     for (let i = 0; i < sceneComponents.length; i++) {
