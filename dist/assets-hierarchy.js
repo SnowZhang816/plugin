@@ -19,16 +19,31 @@ function onCreateMenu(t) {
 }
 exports.onCreateMenu = onCreateMenu;
 ;
+async function exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid) {
+    const options = {
+        name: "script-help",
+        method: 'exportComToScript',
+        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
+    };
+    return await Editor.Message.request('scene', 'execute-scene-script', options);
+}
 function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid) {
     return {
         label: scriptName,
-        click() {
-            const options = {
-                name: "script-help",
-                method: 'exportComToScript',
-                args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
+        async click() {
+            let retry = async (times) => {
+                times--;
+                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
+                console.log("assets-hierarchy exportComToScript", result);
+                if (!result) {
+                    if (times > 0) {
+                        setTimeout(() => {
+                            retry(times);
+                        }, 100);
+                    }
+                }
             };
-            Editor.Message.request('scene', 'execute-scene-script', options);
+            retry(10);
         }
     };
 }

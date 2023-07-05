@@ -1,8 +1,9 @@
 import { _decorator, Component, Node } from 'cc';
 const { ccclass, property } = _decorator;
+import { XComponent } from 'bos/framework/component/XComponent';
 
 @ccclass('<%UnderscoreCaseClassName%>')
-export class <%UnderscoreCaseClassName%> extends Component {
+export class <%UnderscoreCaseClassName%> extends XComponent {
     start() {
 
     }

@@ -20,17 +20,33 @@ export function onCreateMenu(t: any) {
     ];
 };
 
+async function exportComToScript(nodeUuid: string, nodeName: string, propertyType: string, scriptName: string, scriptCid: string, scriptUuid: string, exportScriptUuid?: string){
+    const options: ExecuteSceneScriptMethodOptions = {
+        name: "script-help",
+        method: 'exportComToScript',
+        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
+    };
+
+    return await Editor.Message.request('scene', 'execute-scene-script', options)
+}
+
 function getSubMenu(nodeUuid: string, nodeName: string, propertyType: string, scriptName: string, scriptCid: string, scriptUuid: string, exportScriptUuid?: string) {
     return {
         label: scriptName,
-        click() {
-            const options: ExecuteSceneScriptMethodOptions = {
-                name: "script-help",
-                method: 'exportComToScript',
-                args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
-            };
-
-            Editor.Message.request('scene', 'execute-scene-script', options)
+        async click() {
+            let retry = async (times : number) => {
+                times--
+                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
+                console.log("assets-hierarchy exportComToScript", result)
+                if (!result) {
+                    if (times > 0) {
+                        setTimeout(() => {
+                            retry(times)
+                        }, 100);
+                    }
+                }
+            }
+            retry(10)
         }
     }
 }

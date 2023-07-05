@@ -123,7 +123,7 @@ function findInspectorRootNode(node: Node): Node {
     }
 }
 
-function getValidCom(node: Node, result: any[]) {
+function getValidCom(node: Node, result: any[], result1 ?: any[]) {
     let components = node.components ?? []
     for (let index = 0; index < components.length; index++) {
         const component = components[index];
@@ -133,6 +133,7 @@ function getValidCom(node: Node, result: any[]) {
         // console.log("getValidCom", cls)
         if (cls) {
             result.push(name)
+            result1?.push(component)
         }
     }
     let children = node.children ?? []
@@ -383,50 +384,130 @@ export const methods: { [key: string]: (...any: any) => any } = {
             return
         }
 
-        let trySet = (times : number)=>{
-            setTimeout(async () => {
-                times = times - 1
-                let success = true
-                let scene = director.getScene() as Node
-                let coms = scene.getComponentsInChildren(scriptName)
-                if (coms.length < 0) {
-                    success = false
-                } else {
-                    for (let index = 0; index < coms.length; index++) {
-                        const com = coms[index] as any;
-                        let props = Object.getOwnPropertyNames(com)
-                        if (props.indexOf(nodeName) != -1) {
-                            if (exportType == "Node") {
-                                com[nodeName] = exportNode
-                                refreshInspector(com.node)
-                            } else {
-                                if (exportNode.getComponent(exportType)) {
-                                    com[nodeName] = exportNode.getComponent(exportType)
-                                    refreshInspector(com.node)
-                                } else {
-                                    console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
-                                }
-                            }
+        // let trySet = (times : number)=>{
+        //     console.log("trySet..........", times)
+        //     setTimeout(async () => {
+        //         times = times - 1
+        //         let success = true
+
+        //         let coms = scene.getComponentsInChildren(scriptName)
+        //         console.log("getComponentsInChildren", coms)
+        //         let result : any = []
+        //         let result1 : any = []
+        //         let exportNode1 = findByUUID(scene, nodeUuid) as Node
+        //         let rootNode = findInspectorRootNode(exportNode1)
+        //         getValidCom(rootNode, result, result1)
+        //         console.log("getValidCom rootNode", result, result1)
+        //         console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
+        //         let coms1 : any[] = []
+        //         for (let index = 0; index < result1.length; index++) {
+        //             const i = result1[index];
+        //             if (i.constructor.name == scriptName) {
+        //                 coms1.push(i)
+        //             }
+        //         }
+        //         if (coms1.length <= 0) {
+        //             success = false
+        //             console.warn(`exportComToScript can't find component of ${scriptName}`)
+        //         } else {
+        //             console.log("exportComToScript 1")
+        //             for (let index = 0; index < coms1.length; index++) {
+        //                 const com = coms1[index] as any;
+        //                 let props = Object.getOwnPropertyNames(com)
+        //                 if (props.indexOf(nodeName) != -1) {
+        //                     if (exportType == "Node") {
+        //                         com[nodeName] = exportNode
+        //                         console.log("exportComToScript success")
+        //                         refreshInspector(com.node)
+        //                     } else {
+        //                         if (exportNode.getComponent(exportType)) {
+        //                             com[nodeName] = exportNode.getComponent(exportType)
+        //                             console.log("exportComToScript success")
+        //                             refreshInspector(com.node)
+        //                         } else {
+        //                             console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
+        //                         }
+        //                     }
+        //                 } else {
+        //                     console.log(`exportComToScript can't find prop of ${nodeName}`)
+        //                     success = false
+        //                     break
+        //                 }
+        //             }
+        //         }
+
+        //         if (!success) {
+        //             //编译代码
+        //             // await refreshAssetDb()
+        //             if (times > 0) {
+        //                 trySet(times)
+        //             } else {
+        //                 console.warn(`exportComToScript fail`)
+        //             }
+        //         }
+        //     }, 500)
+        // }
+
+        // trySet(1)
+
+        let success = true
+        let coms = scene.getComponentsInChildren(scriptName)
+        console.log("getComponentsInChildren", coms)
+        let result : any = []
+        let result1 : any = []
+        let exportNode1 = findByUUID(scene, nodeUuid) as Node
+        let rootNode = findInspectorRootNode(exportNode1)
+        getValidCom(rootNode, result, result1)
+        console.log("getValidCom rootNode", result, result1)
+        // console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
+        let coms1 : any[] = []
+        for (let index = 0; index < result1.length; index++) {
+            const i = result1[index];
+            if (i.constructor.name == scriptName) {
+                coms1.push(i)
+            }
+        }
+        if (coms1.length <= 0) {
+            success = false
+            console.warn(`exportComToScript can't find component of ${scriptName}`)
+        } else {
+            console.log("exportComToScript 1", coms1)
+            for (let index = 0; index < coms1.length; index++) {
+                const com = coms1[index] as any;
+                let props = Object.getOwnPropertyNames(com)
+                if (props.indexOf(nodeName) != -1) {
+                    if (exportType == "Node") {
+                        com[nodeName] = exportNode
+                        console.log("exportComToScript success")
+                        refreshInspector(com.node)
+                    } else {
+                        if (exportNode.getComponent(exportType)) {
+                            com[nodeName] = exportNode.getComponent(exportType)
+                            console.log("exportComToScript success")
+                            refreshInspector(com.node)
                         } else {
-                            console.log(`exportComToScript can't find prop of ${nodeName}`)
-                            success = false
-                            break
+                            console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`)
                         }
                     }
+                } else {
+                    console.log(`exportComToScript can't find prop of ${nodeName}`)
+                    success = false
+                    break
                 }
-
-                if (!success && times > 0) {
-                    //编译代码
-                    await refreshAssetDb()
-
-                    trySet(times)
-                }else {
-                    
-                }
-            }, 10)
+            }
         }
 
-        trySet(10)
+        if (!success) {
+            //编译代码
+            // await refreshAssetDb()
+            // if (times > 0) {
+            //     trySet(times)
+            // } else {
+            //     console.warn(`exportComToScript fail`)
+            // }
+        }
+
+        return success
     }
 };
 
