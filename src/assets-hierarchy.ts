@@ -81,9 +81,9 @@ export async function onNodeMenu(t: any) {
     };
     let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options) as any[]
     nodeValidComponents = nodeValidComponents ?? []
-    console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
+    // console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
     let sceneComponents = await Editor.Message.request('scene', 'query-components')
-    console.warn("sceneComponents sceneComponents", sceneComponents)
+    // console.warn("sceneComponents sceneComponents", sceneComponents)
     let valids: any[] = []
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];
@@ -200,9 +200,9 @@ export async function onRootMenu(t: any) {
     };
     let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options) as any[]
     nodeValidComponents = nodeValidComponents ?? []
-    console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
+    // console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
     let sceneComponents = await Editor.Message.request('scene', 'query-components')
-    console.warn("sceneComponents sceneComponents", sceneComponents)
+    // console.warn("sceneComponents sceneComponents", sceneComponents)
     let valids: any[] = []
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];

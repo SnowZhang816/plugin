@@ -74,9 +74,9 @@ async function onNodeMenu(t) {
     };
     let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options);
     nodeValidComponents = nodeValidComponents !== null && nodeValidComponents !== void 0 ? nodeValidComponents : [];
-    console.warn("sceneComponents nodeValidComponents", nodeValidComponents);
+    // console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
     let sceneComponents = await Editor.Message.request('scene', 'query-components');
-    console.warn("sceneComponents sceneComponents", sceneComponents);
+    // console.warn("sceneComponents sceneComponents", sceneComponents)
     let valids = [];
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];
@@ -186,9 +186,9 @@ async function onRootMenu(t) {
     };
     let nodeValidComponents = await Editor.Message.request('scene', 'execute-scene-script', options);
     nodeValidComponents = nodeValidComponents !== null && nodeValidComponents !== void 0 ? nodeValidComponents : [];
-    console.warn("sceneComponents nodeValidComponents", nodeValidComponents);
+    // console.warn("sceneComponents nodeValidComponents", nodeValidComponents)
     let sceneComponents = await Editor.Message.request('scene', 'query-components');
-    console.warn("sceneComponents sceneComponents", sceneComponents);
+    // console.warn("sceneComponents sceneComponents", sceneComponents)
     let valids = [];
     for (let index = 0; index < sceneComponents.length; index++) {
         const component = sceneComponents[index];

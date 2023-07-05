@@ -128,9 +128,9 @@ function getValidCom(node: Node, result: any[]) {
     for (let index = 0; index < components.length; index++) {
         const component = components[index];
         let name = component.constructor.name
-        console.log("getValidCom", name)
+        // console.log("getValidCom", name)
         let cls = js.getClassByName(name)
-        console.log("getValidCom", cls)
+        // console.log("getValidCom", cls)
         if (cls) {
             result.push(name)
         }
