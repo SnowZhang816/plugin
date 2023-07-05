@@ -368,8 +368,8 @@ exports.methods = {
                         console.warn(`${scriptName} can't has Regex Head`);
                     }
                 }
-                console.debug("readFileSync", str);
                 fs_1.default.writeFileSync(pathScript, str);
+                console.log("write script success");
                 //刷新资源
                 await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
                 //编译代码
