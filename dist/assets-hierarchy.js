@@ -27,10 +27,16 @@ async function exportComToScript(nodeUuid, nodeName, propertyType, scriptName, s
     };
     return await Editor.Message.request('scene', 'execute-scene-script', options);
 }
-function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid) {
+function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, temp) {
+    // console.log("exportComToScript", nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, temp)
+    let labelName = scriptName;
+    if (temp) {
+        labelName = labelName + temp.toString();
+    }
     return {
-        label: scriptName,
+        label: labelName,
         async click() {
+            // console.log("exportComToScript click", nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
             let retry = async (times) => {
                 times--;
                 let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
@@ -74,16 +80,29 @@ async function getScriptExportMenu(t) {
         let valids = [];
         for (let index = 0; index < sceneComponents.length; index++) {
             const component = sceneComponents[index];
-            if (component.assetUuid && nodeValidComponents.indexOf(component.name.replace('cc.', '')) != -1) {
+            let i = nodeValidComponents.indexOf(component.cid);
+            if (component.assetUuid && i != -1) {
                 valids.push(component);
             }
         }
         if (valids.length > 0) {
-            // console.warn("valids sceneComponents", valids)
+            console.warn("valids sceneComponents", valids);
             let subSceneComMenus = [];
+            let includes = new Map();
             for (let index = 0; index < valids.length; index++) {
                 const sceneCom = valids[index];
-                subSceneComMenus.push(getSubMenu(t.uuid, t.name, "Node", sceneCom.name, sceneCom.cid, sceneCom.assetUuid));
+                let name = sceneCom.name;
+                let identify = includes.get(name);
+                let count;
+                if (typeof identify === 'undefined') {
+                    identify = 0;
+                }
+                else {
+                    identify++;
+                    count = identify;
+                }
+                includes.set(name, identify);
+                subSceneComMenus.push(getSubMenu(t.uuid, t.name, "Node", sceneCom.name, sceneCom.cid, sceneCom.assetUuid, "", count));
             }
             menus.push({
                 label: 'Node 到',
@@ -104,15 +123,27 @@ async function getScriptExportMenu(t) {
                     }
                 }
                 subSceneComMenus = [];
+                let includes = new Map();
                 for (let index = 0; index < valids.length; index++) {
                     const sceneCom = valids[index];
+                    let name = sceneCom.name;
+                    let identify = includes.get(name);
+                    let count;
+                    if (typeof identify === 'undefined') {
+                        identify = 0;
+                    }
+                    else {
+                        identify++;
+                        count = identify;
+                    }
+                    includes.set(name, identify);
                     if (exportScriptUuid) {
                         if (sceneCom.name != nodeCom.type) {
-                            subSceneComMenus.push(getSubMenu(t.uuid, t.name, nodeCom.type, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, exportScriptUuid));
+                            subSceneComMenus.push(getSubMenu(t.uuid, t.name, nodeCom.type, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, exportScriptUuid, count));
                         }
                     }
                     else {
-                        subSceneComMenus.push(getSubMenu(t.uuid, t.name, nodeCom.type, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, exportScriptUuid));
+                        subSceneComMenus.push(getSubMenu(t.uuid, t.name, nodeCom.type, sceneCom.name, sceneCom.cid, sceneCom.assetUuid, exportScriptUuid, count));
                     }
                 }
                 if (subSceneComMenus.length > 0) {

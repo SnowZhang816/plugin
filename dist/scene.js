@@ -120,11 +120,11 @@ function getValidCom(node, result, result1) {
     for (let index = 0; index < components.length; index++) {
         const component = components[index];
         let name = component.constructor.name;
-        // console.log("getValidCom", name)
-        let cls = cc_5.js.getClassByName(name);
-        // console.log("getValidCom", cls)
-        if (cls) {
-            result.push(name);
+        // console.log("getValidCom", component.constructor.prototype.__cid__, name)
+        let cid = cc_5.js.getClassId(component, false);
+        /**name != cid 表示不是引擎自带组件类 */
+        if (cid && cid != "" && name != cid) {
+            result.push(cid);
             result1 === null || result1 === void 0 ? void 0 : result1.push(component);
         }
     }
@@ -167,7 +167,7 @@ function waitCls(scriptCid, exportName) {
  */
 exports.methods = {
     getValidCom(...args) {
-        console.log("hello world");
+        // console.log("hello world")
         let nodeUuid = args[0];
         let scene = director.getScene();
         let exportNode = findByUUID(scene, nodeUuid);
@@ -176,7 +176,7 @@ exports.methods = {
             return;
         }
         let node = findInspectorRootNode(exportNode);
-        console.log("findInspectorRootNode res", node);
+        // console.log("findInspectorRootNode res", node)
         let result = [];
         getValidCom(node, result);
         return result;
@@ -394,43 +394,47 @@ exports.methods = {
         getValidCom(rootNode, result, result1);
         // console.log("getValidCom rootNode", result, result1)
         // console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
-        let coms1 = [];
-        for (let index = 0; index < result1.length; index++) {
-            const i = result1[index];
-            if (i.constructor.name == scriptName) {
-                coms1.push(i);
+        let cls = cc_5.js.getClassById(scriptCid);
+        if (cls) {
+            let instance = new cls();
+            let coms1 = [];
+            for (let index = 0; index < result1.length; index++) {
+                const i = result1[index];
+                if (i.constructor == instance.constructor) {
+                    coms1.push(i);
+                }
             }
-        }
-        if (coms1.length <= 0) {
-            success = false;
-            console.warn(`exportComToScript can't find component of ${scriptName} then will retry`);
-        }
-        else {
-            // console.log("exportComToScript 1", coms1)
-            for (let index = 0; index < coms1.length; index++) {
-                const com = coms1[index];
-                let props = Object.getOwnPropertyNames(com);
-                if (props.indexOf(exportName) != -1) {
-                    if (exportType == "Node") {
-                        com[exportName] = exportNode;
-                        console.log("exportComToScript success");
-                        refreshInspector(com.node);
-                    }
-                    else {
-                        if (exportNode.getComponent(exportType)) {
-                            com[exportName] = exportNode.getComponent(exportType);
+            if (coms1.length <= 0) {
+                success = false;
+                console.warn(`exportComToScript can't find component of ${scriptName} then will retry`);
+            }
+            else {
+                // console.log("exportComToScript 1", coms1)
+                for (let index = 0; index < coms1.length; index++) {
+                    const com = coms1[index];
+                    let props = Object.getOwnPropertyNames(com);
+                    if (props.indexOf(exportName) != -1) {
+                        if (exportType == "Node") {
+                            com[exportName] = exportNode;
                             console.log("exportComToScript success");
                             refreshInspector(com.node);
                         }
                         else {
-                            console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`);
+                            if (exportNode.getComponent(exportType)) {
+                                com[exportName] = exportNode.getComponent(exportType);
+                                console.log("exportComToScript success");
+                                refreshInspector(com.node);
+                            }
+                            else {
+                                console.warn(`exportComToScript can't find component of ${exportType} in ${nodeName}`);
+                            }
                         }
                     }
-                }
-                else {
-                    console.log(`exportComToScript can't find prop of ${exportName} then will retry`);
-                    success = false;
-                    break;
+                    else {
+                        console.log(`exportComToScript can't find prop of ${exportName} then will retry`);
+                        success = false;
+                        break;
+                    }
                 }
             }
         }
