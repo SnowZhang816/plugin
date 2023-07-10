@@ -19,11 +19,11 @@ function onCreateMenu(t) {
 }
 exports.onCreateMenu = onCreateMenu;
 ;
-async function exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid) {
+async function exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, isRetry) {
     const options = {
         name: "script-help",
         method: 'exportComToScript',
-        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
+        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, isRetry]
     };
     return await Editor.Message.request('scene', 'execute-scene-script', options);
 }
@@ -37,25 +37,27 @@ function getSubMenu(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scr
         label: labelName,
         async click() {
             // console.log("exportComToScript click", nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
-            let retry = async (times) => {
+            let retry = async (times, isRetry) => {
                 times--;
-                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid);
+                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, isRetry);
                 // console.log("assets-hierarchy exportComToScript", result)
-                if (!result) {
-                    if (times > 0) {
-                        setTimeout(() => {
-                            retry(times);
-                        }, 100);
-                    }
-                    else {
-                        console.warn("assets-hierarchy exportComToScript fail");
+                if (result != 0) {
+                    if (result == 1) {
+                        if (times > 0) {
+                            setTimeout(() => {
+                                retry(times, true);
+                            }, 100);
+                        }
+                        else {
+                            console.warn("assets-hierarchy exportComToScript fail");
+                        }
                     }
                 }
                 else {
                     console.log("assets-hierarchy exportComToScript success");
                 }
             };
-            retry(10);
+            retry(10, false);
         }
     };
 }

@@ -21,11 +21,11 @@ export function onCreateMenu(t: any) {
     ];
 };
 
-async function exportComToScript(nodeUuid: string, nodeName: string, propertyType: string, scriptName: string, scriptCid: string, scriptUuid: string, exportScriptUuid?: string){
+async function exportComToScript(nodeUuid: string, nodeName: string, propertyType: string, scriptName: string, scriptCid: string, scriptUuid: string, exportScriptUuid?: string, isRetry? : boolean){
     const options: ExecuteSceneScriptMethodOptions = {
         name: "script-help",
         method: 'exportComToScript',
-        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid]
+        args: [nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, isRetry]
     };
 
     return await Editor.Message.request('scene', 'execute-scene-script', options)
@@ -41,23 +41,25 @@ function getSubMenu(nodeUuid: string, nodeName: string, propertyType: string, sc
         label: labelName,
         async click() {
             // console.log("exportComToScript click", nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
-            let retry = async (times : number) => {
+            let retry = async (times : number, isRetry : boolean) => {
                 times--
-                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
+                let result = await exportComToScript(nodeUuid, nodeName, propertyType, scriptName, scriptCid, scriptUuid, exportScriptUuid, isRetry)
                 // console.log("assets-hierarchy exportComToScript", result)
-                if (!result) {
-                    if (times > 0) {
-                        setTimeout(() => {
-                            retry(times)
-                        }, 100);
-                    } else {
-                        console.warn("assets-hierarchy exportComToScript fail")
+                if (result != 0) {
+                    if (result == 1) {
+                        if (times > 0) {
+                            setTimeout(() => {
+                                retry(times, true)
+                            }, 100);
+                        } else {
+                            console.warn("assets-hierarchy exportComToScript fail")
+                        }
                     }
                 } else {
                     console.log("assets-hierarchy exportComToScript success")
                 }
             }
-            retry(10)
+            retry(10, false)
         }
     }
 }

@@ -262,6 +262,7 @@ exports.methods = {
             let str = fs_1.default.readFileSync(template, 'utf8');
             str = str.replace(/<%UnderscoreCaseClassName%>/g, name);
             let newAssetInfo = await Editor.Message.request("asset-db", "create-asset", newFile, str);
+            // console.log("createComponent newAssetInfo", newAssetInfo)
             if (!newAssetInfo) {
                 console.warn("createComponent create-asset error");
                 return;
@@ -271,13 +272,21 @@ exports.methods = {
             await refreshAssetDb();
             let tryAddComponent = (times) => {
                 times = times - 1;
-                console.warn("http.request end", times); // 打印接收到的响应数据
                 setTimeout(async () => {
-                    let class1 = cc_5.js.getClassByName(name);
-                    if (class1) {
+                    let sceneComponents = await Editor.Message.request('scene', 'query-components');
+                    // console.log("createComponent sceneComponents", sceneComponents)
+                    let cid;
+                    for (let index = 0; index < sceneComponents.length; index++) {
+                        const com = sceneComponents[index];
+                        if (com.assetUuid == newAssetInfo.uuid) {
+                            cid = com.cid;
+                            break;
+                        }
+                    }
+                    if (cid) {
                         let options = {
                             uuid: uuid,
-                            component: name
+                            component: cid
                         };
                         Editor.Message.request("scene", "create-component", options);
                     }
@@ -287,12 +296,12 @@ exports.methods = {
                             console.warn(`${name}脚本添加成功`);
                         }
                         else {
-                            console.warn(`${name}脚本没有添加到节点上`);
+                            console.warn(`${name}脚本没有添加到节点上,请重试或者手动添加`);
                         }
                     }
                 }, 100);
             };
-            tryAddComponent(10);
+            tryAddComponent(20);
         }
         catch (error) {
             console.warn(`createComponent open ${template} fail`, error);
@@ -306,80 +315,85 @@ exports.methods = {
         let scriptCid = args[4];
         let scriptUuid = args[5];
         let exportScriptUuid = args[6];
+        let isRetry = args[7];
         let exportName = nodeName + exportType.replace('cc.', '');
         // console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
-        try {
-            let cls = cc_5.js.getClassById(scriptCid);
-            let instance = new cls();
-            let props = Object.getOwnPropertyNames(instance);
-            let pathScript = await Editor.Message.request("asset-db", "query-path", scriptUuid);
-            let str = fs_1.default.readFileSync(pathScript, 'utf8');
-            let writeScript = true;
-            if (props.indexOf(exportName) != -1) {
-                // console.warn(`${scriptName} already has Property of ${exportName}`)
-                writeScript = false;
-            }
-            // let exportNameRegex = /XXXX\s+:/
-            // const modifiedNameRegex = new RegExp(exportNameRegex.source.replace("XXXX", exportName), exportNameRegex.flags);
-            // if (modifiedNameRegex.test(str)){
-            //     console.warn(`modifiedNameRegex: ${scriptName} already has Property of ${exportName}`)
-            //     writeScript = false
-            // }
-            if (writeScript) {
-                //引擎自带脚本/Node
-                if (exportType.startsWith("cc.") || exportType == "Node") {
-                    let exportTypeWithOutCC = exportType.replace('cc.', '');
-                    let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
-                    let headRegexArray = headRegex.exec(str);
-                    // console.warn("headRegexStr", headRegexArray)
-                    if (headRegexArray) {
-                        let headRegexStr = headRegexArray[0];
-                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportTypeWithOutCC})\n\t${exportName} : ${exportTypeWithOutCC}\n`);
-                        let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from 'cc'/;
-                        const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
-                        if (!modifiedRegex.test(str)) {
-                            str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str;
+        let success = 0;
+        if (!isRetry) {
+            try {
+                let cls = cc_5.js.getClassById(scriptCid);
+                let instance = new cls();
+                let props = Object.getOwnPropertyNames(instance);
+                let pathScript = await Editor.Message.request("asset-db", "query-path", scriptUuid);
+                let str = fs_1.default.readFileSync(pathScript, 'utf8');
+                let writeScript = true;
+                if (props.indexOf(exportName) != -1) {
+                    // console.warn(`${scriptName} already has Property of ${exportName}`)
+                    writeScript = false;
+                }
+                // let exportNameRegex = /XXXX\s+:/
+                // const modifiedNameRegex = new RegExp(exportNameRegex.source.replace("XXXX", exportName), exportNameRegex.flags);
+                // if (modifiedNameRegex.test(str)){
+                //     console.warn(`modifiedNameRegex: ${scriptName} already has Property of ${exportName}`)
+                //     writeScript = false
+                // }
+                if (writeScript) {
+                    //引擎自带脚本/Node
+                    if (exportType.startsWith("cc.") || exportType == "Node") {
+                        let exportTypeWithOutCC = exportType.replace('cc.', '');
+                        let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
+                        let headRegexArray = headRegex.exec(str);
+                        // console.warn("headRegexStr", headRegexArray)
+                        if (headRegexArray) {
+                            let headRegexStr = headRegexArray[0];
+                            str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportTypeWithOutCC})\n\t${exportName} : ${exportTypeWithOutCC}\n`);
+                            let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from 'cc'/;
+                            const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportTypeWithOutCC), regex.flags);
+                            if (!modifiedRegex.test(str)) {
+                                str = `import { ${exportTypeWithOutCC} } from 'cc'\n` + str;
+                            }
+                        }
+                        else {
+                            console.warn(`${scriptName} can't has Regex Head`);
                         }
                     }
                     else {
-                        console.warn(`${scriptName} can't has Regex Head`);
-                    }
-                }
-                else {
-                    //db://assets/app/modules/match/matchModules/prefab/bgSprite.ts
-                    let exportScriptPath = await Editor.Message.request("asset-db", "query-url", exportScriptUuid);
-                    let info = path_1.default.parse(exportScriptPath);
-                    console.log("exportScriptPath", exportScriptPath, info);
-                    let headPath = info.dir.replace("db://assets/", "");
-                    let importPath = headPath + '/' + info.name;
-                    // console.log("exportScriptPath", importPath)
-                    let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
-                    let headRegexArray = headRegex.exec(str);
-                    if (headRegexArray) {
-                        let headRegexStr = headRegexArray[0];
-                        str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportType})\n\t${exportName} : ${exportType}\n`);
-                        let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from/;
-                        const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
-                        if (!modifiedRegex.test(str)) {
-                            str = `import { ${exportType} } from '${importPath}'\n` + str;
+                        //db://assets/app/modules/match/matchModules/prefab/bgSprite.ts
+                        let exportScriptPath = await Editor.Message.request("asset-db", "query-url", exportScriptUuid);
+                        let info = path_1.default.parse(exportScriptPath);
+                        console.log("exportScriptPath", exportScriptPath, info);
+                        let headPath = info.dir.replace("db://assets/", "");
+                        let importPath = headPath + '/' + info.name;
+                        // console.log("exportScriptPath", importPath)
+                        let headRegex = /export\s+class\s+(\w+)\s+extends\s+(\w+)\s*\{/;
+                        let headRegexArray = headRegex.exec(str);
+                        if (headRegexArray) {
+                            let headRegexStr = headRegexArray[0];
+                            str = str.replace(headRegexStr, headRegexStr + `\n\t@property(${exportType})\n\t${exportName} : ${exportType}\n`);
+                            let regex = /import\s+\{[^}]*XXXX[^}]*\}\s+from/;
+                            const modifiedRegex = new RegExp(regex.source.replace("XXXX", exportType), regex.flags);
+                            if (!modifiedRegex.test(str)) {
+                                str = `import { ${exportType} } from '${importPath}'\n` + str;
+                            }
+                        }
+                        else {
+                            console.warn(`${scriptName} can't has Regex Head`);
                         }
                     }
-                    else {
-                        console.warn(`${scriptName} can't has Regex Head`);
-                    }
+                    fs_1.default.writeFileSync(pathScript, str);
+                    console.log("write script success");
+                    //刷新资源
+                    await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
+                    //编译代码
+                    await refreshAssetDb();
+                    //等待类注册完毕
+                    await waitCls(scriptCid, exportName);
                 }
-                fs_1.default.writeFileSync(pathScript, str);
-                console.log("write script success");
-                //刷新资源
-                await Editor.Message.request("asset-db", "refresh-asset", "db://assets");
-                //编译代码
-                await refreshAssetDb();
-                //等待类注册完毕
-                await waitCls(scriptCid, exportName);
             }
-        }
-        catch (error) {
-            console.error(`exportComToScript try execute ${scriptName} fail`, error);
+            catch (error) {
+                console.error(`exportComToScript try execute ${scriptName} fail`, error);
+                success = 2;
+            }
         }
         let scene = director.getScene();
         let exportNode = findByUUID(scene, nodeUuid);
@@ -387,7 +401,6 @@ exports.methods = {
             console.warn(`exportComToScript can't find node of ${nodeName}`);
             return;
         }
-        let success = true;
         let result = [];
         let result1 = [];
         let rootNode = findInspectorRootNode(exportNode);
@@ -405,7 +418,7 @@ exports.methods = {
                 }
             }
             if (coms1.length <= 0) {
-                success = false;
+                success = 1;
                 console.warn(`exportComToScript can't find component of ${scriptName} then will retry`);
             }
             else {
@@ -432,7 +445,7 @@ exports.methods = {
                     }
                     else {
                         console.log(`exportComToScript can't find prop of ${exportName} then will retry`);
-                        success = false;
+                        success = 1;
                         break;
                     }
                 }
