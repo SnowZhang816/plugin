@@ -315,10 +315,11 @@ export const methods: { [key: string]: (...any: any) => any } = {
                             component: cid
                         }
                         Editor.Message.request("scene", "create-component", options)
+
+                        console.warn(`${name}脚本添加成功`)
                     }else {
                         if (times > 0) {
                             tryAddComponent(times)
-                            console.warn(`${name}脚本添加成功`)
                         } else {
                             console.warn(`${name}脚本没有添加到节点上,请重试或者手动添加`)
                         }
