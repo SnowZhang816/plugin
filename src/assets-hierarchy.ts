@@ -5,20 +5,20 @@ import { js } from "cc";
 
 export function onCreateMenu(t: any) {
     // console.warn("assets-hierarchy onCreateMenu", t)
-    return [
-        {
-            label: 'i18n:script-help.menu.fullParent',
-            click() {
-                const options: ExecuteSceneScriptMethodOptions = {
-                    name: "script-help",
-                    method: 'asyncParentSize',
-                    args: []
-                };
+    // return [
+    //     {
+    //         label: 'i18n:script-help.menu.fullParent',
+    //         click() {
+    //             const options: ExecuteSceneScriptMethodOptions = {
+    //                 name: "script-help",
+    //                 method: 'asyncParentSize',
+    //                 args: []
+    //             };
 
-                Editor.Message.request('scene', 'execute-scene-script', options)
-            },
-        },
-    ];
+    //             Editor.Message.request('scene', 'execute-scene-script', options)
+    //         },
+    //     },
+    // ];
 };
 
 async function exportComToScript(nodeUuid: string, nodeName: string, propertyType: string, scriptName: string, scriptCid: string, scriptUuid: string, exportScriptUuid?: string, isRetry? : boolean){
@@ -168,18 +168,18 @@ export async function onNodeMenu(t: any) {
     let menus = []
 
     //同步父节点大小
-    menus.push({
-        label: 'i18n:script-help.menu.fullParent',
-        click() {
-            const options: ExecuteSceneScriptMethodOptions = {
-                name: "script-help",
-                method: 'log',
-                args: [t.uuid]
-            };
+    // menus.push({
+    //     label: 'i18n:script-help.menu.fullParent',
+    //     click() {
+    //         const options: ExecuteSceneScriptMethodOptions = {
+    //             name: "script-help",
+    //             method: 'log',
+    //             args: [t.uuid]
+    //         };
 
-            Editor.Message.request('scene', 'execute-scene-script', options)
-        },
-    })
+    //         Editor.Message.request('scene', 'execute-scene-script', options)
+    //     },
+    // })
 
     //生成同名组件
     let name = t.name
@@ -215,20 +215,20 @@ export async function onNodeMenu(t: any) {
 
 export function onPanelMenu(t: any) {
     // console.warn("assets-hierarchy onPanelMenu", t)
-    return [
-        {
-            label: 'i18n:script-help.menu.fullParent',
-            async click() {
-                const options: ExecuteSceneScriptMethodOptions = {
-                    name: "script-help",
-                    method: 'asyncParentSize',
-                    args: []
-                };
+    // return [
+    //     {
+    //         label: 'i18n:script-help.menu.fullParent',
+    //         async click() {
+    //             const options: ExecuteSceneScriptMethodOptions = {
+    //                 name: "script-help",
+    //                 method: 'asyncParentSize',
+    //                 args: []
+    //             };
 
-                Editor.Message.request('scene', 'execute-scene-script', options)
-            },
-        },
-    ];
+    //             Editor.Message.request('scene', 'execute-scene-script', options)
+    //         },
+    //     },
+    // ];
 };
 
 export async function onRootMenu(t: any) {
