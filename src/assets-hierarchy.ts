@@ -4,7 +4,7 @@ import { ExecuteSceneScriptMethodOptions } from "../@types/packages/scene/@types
 import { js } from "cc";
 
 export function onCreateMenu(t: any) {
-    console.warn("assets-hierarchy onCreateMenu", t)
+    // console.warn("assets-hierarchy onCreateMenu", t)
     return [
         {
             label: 'i18n:script-help.menu.fullParent',
@@ -90,7 +90,7 @@ async function getScriptExportMenu(t: any){
             }
         }
         if (valids.length > 0) {
-            console.warn("valids sceneComponents", valids)
+            // console.warn("valids sceneComponents", valids)
     
             let subSceneComMenus = []
             let includes = new Map<string, number>()
@@ -164,7 +164,7 @@ async function getScriptExportMenu(t: any){
 }
 
 export async function onNodeMenu(t: any) {
-    console.warn("assets-hierarchy onNodeMenu", t)
+    // console.warn("assets-hierarchy onNodeMenu", t)
     let menus = []
 
     //同步父节点大小
@@ -214,7 +214,7 @@ export async function onNodeMenu(t: any) {
 }
 
 export function onPanelMenu(t: any) {
-    console.warn("assets-hierarchy onPanelMenu", t)
+    // console.warn("assets-hierarchy onPanelMenu", t)
     return [
         {
             label: 'i18n:script-help.menu.fullParent',
@@ -232,7 +232,7 @@ export function onPanelMenu(t: any) {
 };
 
 export async function onRootMenu(t: any) {
-    console.warn("assets-hierarchy onRootMenu", t)
+    // console.warn("assets-hierarchy onRootMenu", t)
     if (t.isScene) {
         //场景节点不能添加组件脚本
         return []

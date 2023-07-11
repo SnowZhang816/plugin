@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.onRootMenu = exports.onPanelMenu = exports.onNodeMenu = exports.onCreateMenu = void 0;
 function onCreateMenu(t) {
-    console.warn("assets-hierarchy onCreateMenu", t);
+    // console.warn("assets-hierarchy onCreateMenu", t)
     return [
         {
             label: 'i18n:script-help.menu.fullParent',
@@ -88,7 +88,7 @@ async function getScriptExportMenu(t) {
             }
         }
         if (valids.length > 0) {
-            console.warn("valids sceneComponents", valids);
+            // console.warn("valids sceneComponents", valids)
             let subSceneComMenus = [];
             let includes = new Map();
             for (let index = 0; index < valids.length; index++) {
@@ -160,7 +160,7 @@ async function getScriptExportMenu(t) {
     return menus;
 }
 async function onNodeMenu(t) {
-    console.warn("assets-hierarchy onNodeMenu", t);
+    // console.warn("assets-hierarchy onNodeMenu", t)
     let menus = [];
     //同步父节点大小
     menus.push({
@@ -204,7 +204,7 @@ async function onNodeMenu(t) {
 }
 exports.onNodeMenu = onNodeMenu;
 function onPanelMenu(t) {
-    console.warn("assets-hierarchy onPanelMenu", t);
+    // console.warn("assets-hierarchy onPanelMenu", t)
     return [
         {
             label: 'i18n:script-help.menu.fullParent',
@@ -222,7 +222,7 @@ function onPanelMenu(t) {
 exports.onPanelMenu = onPanelMenu;
 ;
 async function onRootMenu(t) {
-    console.warn("assets-hierarchy onRootMenu", t);
+    // console.warn("assets-hierarchy onRootMenu", t)
     if (t.isScene) {
         //场景节点不能添加组件脚本
         return [];

@@ -250,6 +250,7 @@ exports.methods = {
             return;
         }
         let newFileName = name + ".ts";
+        newFileName = newFileName.charAt(0).toUpperCase() + newFileName.slice(1);
         let newFile = getDbPath(assetInfo.url) + "/" + newFileName;
         // let template = path.join(Editor.Project.path, ".creator", "asset-template", "typescript", "XComponent")
         // let template = await Editor.Message.request("asset-db", "query-path", "db://internal/default_file_content/ts")
@@ -317,6 +318,7 @@ exports.methods = {
         let exportScriptUuid = args[6];
         let isRetry = args[7];
         let exportName = nodeName + exportType.replace('cc.', '');
+        exportName = exportName.charAt(0).toLowerCase() + exportName.slice(1);
         // console.log("exportComToScript", nodeUuid, nodeName, exportType, scriptName, scriptCid, scriptUuid, exportScriptUuid)
         let success = 0;
         if (!isRetry) {
