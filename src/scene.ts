@@ -140,7 +140,7 @@ function getValidCom(node: Node, result: any[], result1?: any[]) {
     let children = node.children ?? []
     for (let index = 0; index < children.length; index++) {
         const child = children[index];
-        getValidCom(child, result)
+        getValidCom(child, result, result1)
     }
 }
 
@@ -443,7 +443,8 @@ export const methods: { [key: string]: (...any: any) => any } = {
         let result1: any = []
         let rootNode = findInspectorRootNode(exportNode)
         getValidCom(rootNode, result, result1)
-        // console.log("getValidCom rootNode", result, result1)
+        // console.log("getValidCom rootNode result", result)
+        // console.log("getValidCom rootNode result1", result1)
         // console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
 
         let cls = js.getClassById(scriptCid)
@@ -489,6 +490,17 @@ export const methods: { [key: string]: (...any: any) => any } = {
         }
 
         return success
+    },
+
+    async exportAssetToScript(...args : any){
+        let assetUrl = args[0]
+        let assetType = args[1]
+        let assetName = args[2]
+        let scriptName = args[3]
+        let scriptCid = args[4]
+        let scriptUuid = args[5]
+
+        console.log("exportAssetToScript", assetUrl, assetType, assetName, scriptName, scriptCid, scriptUuid)
     }
 };
 

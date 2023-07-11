@@ -131,7 +131,7 @@ function getValidCom(node, result, result1) {
     let children = (_b = node.children) !== null && _b !== void 0 ? _b : [];
     for (let index = 0; index < children.length; index++) {
         const child = children[index];
-        getValidCom(child, result);
+        getValidCom(child, result, result1);
     }
 }
 function waitCls(scriptCid, exportName) {
@@ -407,7 +407,8 @@ exports.methods = {
         let result1 = [];
         let rootNode = findInspectorRootNode(exportNode);
         getValidCom(rootNode, result, result1);
-        // console.log("getValidCom rootNode", result, result1)
+        // console.log("getValidCom rootNode result", result)
+        // console.log("getValidCom rootNode result1", result1)
         // console.log("getValidCom rootNode1", Object.getOwnPropertyNames(result1[0]))
         let cls = cc_5.js.getClassById(scriptCid);
         if (cls) {
@@ -454,6 +455,15 @@ exports.methods = {
             }
         }
         return success;
+    },
+    async exportAssetToScript(...args) {
+        let assetUrl = args[0];
+        let assetType = args[1];
+        let assetName = args[2];
+        let scriptName = args[3];
+        let scriptCid = args[4];
+        let scriptUuid = args[5];
+        console.log("exportAssetToScript", assetUrl, assetType, assetName, scriptName, scriptCid, scriptUuid);
     }
 };
 /**
